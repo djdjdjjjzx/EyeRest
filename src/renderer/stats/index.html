@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <title>EyeRest — 統計</title>
+    <link rel="stylesheet" href="./stats.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero-title">休息紀錄</div>
+      <div class="hero-sub">過去 14 天的 EyeRest 使用情況</div>
+    </header>
+
+    <section class="summary">
+      <div class="stat">
+        <div class="stat-value" id="totalCycles">0</div>
+        <div class="stat-label">總完成週期</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="totalRest">0 分</div>
+        <div class="stat-label">總休息時間</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="todayCycles">0</div>
+        <div class="stat-label">今日完成</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="streak">0</div>
+        <div class="stat-label">連續天數</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>每日完成週期</h3>
+      <div class="chart" id="chart"></div>
+    </section>
+
+    <section class="card">
+      <div class="row-between">
+        <div>
+          <h3 style="margin-bottom: 4px;">每日明細</h3>
+          <div class="sub">顯示最近有紀錄的日期</div>
+        </div>
+        <button class="btn btn-ghost" id="resetBtn">重設統計</button>
+      </div>
+      <table class="log" id="log">
+        <thead>
+          <tr><th>日期</th><th>週期數</th><th>休息時間</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <script src="./stats.js"></script>
+  </body>
+</html>

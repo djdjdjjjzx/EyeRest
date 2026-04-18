@@ -1,0 +1,46 @@
+{
+  "name": "eyerest",
+  "version": "0.1.0",
+  "description": "Cross-platform eye-rest reminder app (20-20-20 rule) with smart idle detection",
+  "main": "src/main/main.js",
+  "author": "Max",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "test": "node test/timer.test.js",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac"
+  },
+  "dependencies": {
+    "auto-launch": "^5.0.6",
+    "electron-store": "^8.2.0"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.max.eyerest",
+    "productName": "EyeRest",
+    "directories": { "output": "dist" },
+    "files": ["src/**/*", "assets/**/*", "package.json"],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "assets/icons/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icons/icon.icns",
+      "category": "public.app-category.healthcare-fitness"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
+  }
+}

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <title>EyeRest — 設定</title>
+    <link rel="stylesheet" href="./settings.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero-title">EyeRest</div>
+      <div class="hero-sub">20-20-20 護眼法則 · 智慧閒置偵測</div>
+      <div class="status" id="status">狀態載入中…</div>
+    </header>
+
+    <section class="card">
+      <h3>時間設定</h3>
+
+      <label class="row">
+        <div class="row-head">
+          <span>工作時間</span>
+          <output id="workOut">20 分</output>
+        </div>
+        <input type="range" id="workMin" min="1" max="60" step="1" value="20" />
+        <div class="hint">每隔多久提醒你休息眼睛</div>
+      </label>
+
+      <label class="row">
+        <div class="row-head">
+          <span>休息時間</span>
+          <output id="breakOut">20 秒</output>
+        </div>
+        <input type="range" id="breakSec" min="10" max="300" step="5" value="20" />
+        <div class="hint">看 6 公尺外物體的時間長度</div>
+      </label>
+
+      <label class="row">
+        <div class="row-head">
+          <span>離開座位時間歸零</span>
+          <output id="idleOut">2 分</output>
+        </div>
+        <input type="range" id="idleMin" min="1" max="30" step="1" value="2" />
+        <div class="hint">
+          超過這段時間沒動滑鼠/鍵盤 → 視為你已經在休息、計時器歸零重算
+        </div>
+      </label>
+    </section>
+
+    <section class="card">
+      <h3>提醒方式</h3>
+      <div class="seg" role="radiogroup" id="mode">
+        <button role="radio" data-value="fullscreen">全螢幕</button>
+        <button role="radio" data-value="overlay">半透明覆蓋</button>
+        <button role="radio" data-value="notification">角落通知</button>
+      </div>
+
+      <label class="toggle">
+        <input type="checkbox" id="soundEnabled" />
+        <span>播放提醒音效</span>
+      </label>
+
+      <label class="toggle">
+        <input type="checkbox" id="allowSkip" />
+        <span>允許「跳過」按鈕</span>
+      </label>
+    </section>
+
+    <section class="card">
+      <h3>系統</h3>
+      <label class="toggle">
+        <input type="checkbox" id="autoLaunch" />
+        <span>開機時自動啟動 EyeRest</span>
+      </label>
+      <div class="actions-row">
+        <button class="btn btn-primary" id="breakNow">立刻休息一次</button>
+        <button class="btn" id="pauseToggle">暫停</button>
+      </div>
+    </section>
+
+    <footer class="footer">EyeRest v0.1.0</footer>
+
+    <script src="./settings.js"></script>
+  </body>
+</html>
