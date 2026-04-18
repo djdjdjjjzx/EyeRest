@@ -1,107 +1,167 @@
 // settings.js — renderer for the settings window.
+// The script tag lives at the end of <body>, so the DOM is ready by the time
+// we run. We wrap everything in try/catch so a failure anywhere doesn't leave
+// the page looking frozen.
 
-(() => {
+(function main() {
+  try {
+    runInit();
+  } catch (err) {
+    console.error('[EyeRest settings] init threw:', err);
+    const s = document.getElementById('status');
+    if (s) s.textContent = '初始化錯誤: ' + (err && err.message ? err.message : String(err));
+  }
+})();
+
+function runInit() {
   const $ = (id) => document.getElementById(id);
 
-  const workMin = $('workMin');
-  const breakSec = $('breakSec');
-  const idleMin = $('idleMin');
-  const workOut = $('workOut');
-  const breakOut = $('breakOut');
-  const idleOut = $('idleOut');
-  const modeSeg = $('mode');
-  const soundEnabled = $('soundEnabled');
-  const allowSkip = $('allowSkip');
-  const autoLaunch = $('autoLaunch');
-  const breakNowBtn = $('breakNow');
-  const pauseToggleBtn = $('pauseToggle');
-  const status = $('status');
+  const workMin           = $('workMin');
+  const breakSec          = $('breakSec');
+  const idleMin           = $('idleMin');
+  const workOut           = $('workOut');
+  const breakOut          = $('breakOut');
+  const idleOut           = $('idleOut');
+  const modeSeg           = $('mode');
+  const soundEnabled      = $('soundEnabled');
+  const allowSkip         = $('allowSkip');
+  const autoLaunch        = $('autoLaunch');
+  const preWarningEnabled = $('preWarningEnabled');
+  const preWarnSec        = $('preWarnSec');
+  const preWarnOut        = $('preWarnOut');
+  const breakNowBtn       = $('breakNow');
+  const pauseToggleBtn    = $('pauseToggle');
+  // Do NOT name this `status` — window.status is a legacy browser property
+  // and in some Electron versions assignments to it get intercepted.
+  const statusEl          = $('status');
+
+  function text(el, t) { if (el) el.textContent = t; }
 
   function formatSec(sec) {
-    if (sec < 60) return `${sec} 秒`;
-    if (sec % 60 === 0) return `${sec / 60} 分`;
-    return `${Math.floor(sec / 60)} 分 ${sec % 60} 秒`;
+    const n = Number(sec) || 0;
+    if (n < 60) return `${n} 秒`;
+    if (n % 60 === 0) return `${n / 60} 分`;
+    return `${Math.floor(n / 60)} 分 ${n % 60} 秒`;
   }
 
   function paintMode(val) {
+    if (!modeSeg) return;
     modeSeg.querySelectorAll('button').forEach((b) => {
       b.setAttribute('aria-checked', b.dataset.value === val ? 'true' : 'false');
     });
   }
 
   async function loadSettings() {
-    const s = await window.eyerest.getSettings();
-    workMin.value = Math.round(s.workDurationSec / 60);
-    breakSec.value = s.breakDurationSec;
-    idleMin.value = Math.round(s.idleThresholdSec / 60);
-    workOut.textContent = `${workMin.value} 分`;
-    breakOut.textContent = formatSec(Number(breakSec.value));
-    idleOut.textContent = `${idleMin.value} 分`;
-    paintMode(s.reminderMode);
-    soundEnabled.checked = !!s.soundEnabled;
-    allowSkip.checked = !!s.allowSkip;
-    autoLaunch.checked = !!s.autoLaunch;
-  }
-
-  async function save(partial) {
-    await window.eyerest.setSettings(partial);
-  }
-
-  async function refreshStatus() {
-    const state = await window.eyerest.getTimerState();
-    if (state.paused) {
-      status.textContent = '已暫停';
-      pauseToggleBtn.textContent = '繼續';
-    } else if (state.phase === 'break') {
-      const r = state.breakDurationSec - state.breakElapsedSec;
-      status.textContent = `休息中 · 還剩 ${r} 秒`;
-      pauseToggleBtn.textContent = '暫停';
-    } else {
-      const r = state.workDurationSec - state.workElapsedSec;
-      const m = Math.floor(r / 60);
-      const s = r % 60;
-      status.textContent = `距下次休息 ${m}:${String(s).padStart(2, '0')}`;
-      pauseToggleBtn.textContent = '暫停';
+    try {
+      const s = await window.eyerest.getSettings();
+      if (workMin)  workMin.value  = Math.round(s.workDurationSec / 60);
+      if (breakSec) breakSec.value = s.breakDurationSec;
+      if (idleMin)  idleMin.value  = Math.round(s.idleThresholdSec / 60);
+      text(workOut,  `${workMin ? workMin.value : ''} 分`);
+      text(breakOut, formatSec(breakSec ? breakSec.value : 0));
+      text(idleOut,  `${idleMin ? idleMin.value : ''} 分`);
+      paintMode(s.reminderMode);
+      if (soundEnabled)      soundEnabled.checked      = !!s.soundEnabled;
+      if (allowSkip)         allowSkip.checked         = !!s.allowSkip;
+      if (autoLaunch)        autoLaunch.checked        = !!s.autoLaunch;
+      if (preWarningEnabled) preWarningEnabled.checked = s.preWarningEnabled !== false;
+      if (preWarnSec)        preWarnSec.value          = s.preWarningSec || 60;
+      text(preWarnOut, formatSec(preWarnSec ? preWarnSec.value : 60));
+    } catch (err) {
+      console.error('[EyeRest settings] loadSettings failed:', err);
     }
   }
 
-  workMin.addEventListener('input', () => {
-    workOut.textContent = `${workMin.value} 分`;
+  async function save(partial) {
+    try {
+      await window.eyerest.setSettings(partial);
+    } catch (err) {
+      console.error('[EyeRest settings] save failed:', err);
+    }
+  }
+
+  async function refreshStatus() {
+    if (!statusEl) return;
+    try {
+      const state = await window.eyerest.getTimerState();
+      if (!state) { statusEl.textContent = '尚未連線'; return; }
+      if (state.paused) {
+        statusEl.textContent = '已暫停';
+        text(pauseToggleBtn, '繼續');
+      } else if (state.phase === 'break') {
+        const r = Math.max(0, state.breakDurationSec - state.breakElapsedSec);
+        statusEl.textContent = `休息中 · 還剩 ${r} 秒`;
+        text(pauseToggleBtn, '暫停');
+      } else {
+        const r = Math.max(0, state.workDurationSec - state.workElapsedSec);
+        const m = Math.floor(r / 60);
+        const sec = r % 60;
+        statusEl.textContent = `距下次休息 ${m}:${String(sec).padStart(2, '0')}`;
+        text(pauseToggleBtn, '暫停');
+      }
+    } catch (err) {
+      console.error('[EyeRest settings] refreshStatus failed:', err);
+      statusEl.textContent = '讀取狀態失敗';
+    }
+  }
+
+  // --- slider live updates (also updates on every `input` while dragging) ---
+  function bindSlider(input, out, mkSaved) {
+    if (!input) return;
+    const update = () => text(out, mkSaved.label(input.value));
+    input.addEventListener('input',  update);
+    input.addEventListener('change', () => { update(); save(mkSaved.save(input.value)); });
+  }
+
+  bindSlider(workMin, workOut, {
+    label: (v) => `${v} 分`,
+    save:  (v) => ({ workDurationSec: Number(v) * 60 }),
   });
-  workMin.addEventListener('change', () => save({ workDurationSec: Number(workMin.value) * 60 }));
-
-  breakSec.addEventListener('input', () => {
-    breakOut.textContent = formatSec(Number(breakSec.value));
+  bindSlider(breakSec, breakOut, {
+    label: (v) => formatSec(v),
+    save:  (v) => ({ breakDurationSec: Number(v) }),
   });
-  breakSec.addEventListener('change', () => save({ breakDurationSec: Number(breakSec.value) }));
-
-  idleMin.addEventListener('input', () => {
-    idleOut.textContent = `${idleMin.value} 分`;
+  bindSlider(idleMin, idleOut, {
+    label: (v) => `${v} 分`,
+    save:  (v) => ({ idleThresholdSec: Number(v) * 60 }),
   });
-  idleMin.addEventListener('change', () => save({ idleThresholdSec: Number(idleMin.value) * 60 }));
-
-  modeSeg.addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-value]');
-    if (!btn) return;
-    paintMode(btn.dataset.value);
-    save({ reminderMode: btn.dataset.value });
+  bindSlider(preWarnSec, preWarnOut, {
+    label: (v) => formatSec(v),
+    save:  (v) => ({ preWarningSec: Number(v) }),
   });
 
-  soundEnabled.addEventListener('change', () => save({ soundEnabled: soundEnabled.checked }));
-  allowSkip.addEventListener('change', () => save({ allowSkip: allowSkip.checked }));
-  autoLaunch.addEventListener('change', () => save({ autoLaunch: autoLaunch.checked }));
+  // --- segmented "reminder mode" ---
+  if (modeSeg) {
+    modeSeg.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-value]');
+      if (!btn) return;
+      paintMode(btn.dataset.value);
+      save({ reminderMode: btn.dataset.value });
+    });
+  }
 
-  breakNowBtn.addEventListener('click', () => window.eyerest.breakNow());
-  pauseToggleBtn.addEventListener('click', async () => {
-    await window.eyerest.pauseToggle();
+  // --- toggles ---
+  if (soundEnabled)      soundEnabled.addEventListener('change',      () => save({ soundEnabled:      soundEnabled.checked }));
+  if (allowSkip)         allowSkip.addEventListener('change',         () => save({ allowSkip:         allowSkip.checked }));
+  if (autoLaunch)        autoLaunch.addEventListener('change',        () => save({ autoLaunch:        autoLaunch.checked }));
+  if (preWarningEnabled) preWarningEnabled.addEventListener('change', () => save({ preWarningEnabled: preWarningEnabled.checked }));
+
+  // --- buttons ---
+  if (breakNowBtn)    breakNowBtn.addEventListener('click',    () => window.eyerest.breakNow());
+  if (pauseToggleBtn) pauseToggleBtn.addEventListener('click', async () => {
+    try { await window.eyerest.pauseToggle(); } catch (e) { console.error(e); }
     refreshStatus();
   });
 
-  window.eyerest.onTick(() => refreshStatus());
-  window.eyerest.onSettings(() => loadSettings());
-  window.eyerest.onState(() => refreshStatus());
+  // --- IPC events from main process ---
+  if (window.eyerest) {
+    if (window.eyerest.onTick)     window.eyerest.onTick(    () => refreshStatus());
+    if (window.eyerest.onSettings) window.eyerest.onSettings(() => loadSettings());
+    if (window.eyerest.onState)    window.eyerest.onState(   () => refreshStatus());
+  }
 
+  // --- initial paint + polling fallback (every 1s) ---
   loadSettings();
   refreshStatus();
-  setInterval(refreshStatus, 2000);
-})();
+  setInterval(refreshStatus, 1000);
+}

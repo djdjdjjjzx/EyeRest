@@ -1,4 +1,4 @@
-<!doctype html>
+<\!doctype html>
 <html lang="zh-Hant">
   <head>
     <meta charset="utf-8" />
@@ -18,7 +18,7 @@
       <label class="row">
         <div class="row-head">
           <span>工作時間</span>
-          <output id="workOut">20 分</output>
+          <span class="value" id="workOut">20 分</span>
         </div>
         <input type="range" id="workMin" min="1" max="60" step="1" value="20" />
         <div class="hint">每隔多久提醒你休息眼睛</div>
@@ -27,7 +27,7 @@
       <label class="row">
         <div class="row-head">
           <span>休息時間</span>
-          <output id="breakOut">20 秒</output>
+          <span class="value" id="breakOut">20 秒</span>
         </div>
         <input type="range" id="breakSec" min="10" max="300" step="5" value="20" />
         <div class="hint">看 6 公尺外物體的時間長度</div>
@@ -36,12 +36,28 @@
       <label class="row">
         <div class="row-head">
           <span>離開座位時間歸零</span>
-          <output id="idleOut">2 分</output>
+          <span class="value" id="idleOut">2 分</span>
         </div>
         <input type="range" id="idleMin" min="1" max="30" step="1" value="2" />
         <div class="hint">
           超過這段時間沒動滑鼠/鍵盤 → 視為你已經在休息、計時器歸零重算
         </div>
+      </label>
+    </section>
+
+    <section class="card">
+      <h3>預先警告</h3>
+      <label class="toggle">
+        <input type="checkbox" id="preWarningEnabled" />
+        <span>休息前跳出小視窗提醒（立刻休息 / 再 3 分 / Skip）</span>
+      </label>
+      <label class="row">
+        <div class="row-head">
+          <span>提前多久警告</span>
+          <span class="value" id="preWarnOut">1 分</span>
+        </div>
+        <input type="range" id="preWarnSec" min="10" max="300" step="10" value="60" />
+        <div class="hint">適合打遊戲、開會時先有心理準備</div>
       </label>
     </section>
 

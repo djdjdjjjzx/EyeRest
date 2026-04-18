@@ -12,6 +12,9 @@ const DEFAULT_SETTINGS = {
   allowSkip: true,
   allowSnooze: true,
   snoozeMinutes: 5,
+  // Pre-warning: small corner popup before the break with +1 / +5 / Skip buttons.
+  preWarningEnabled: true,
+  preWarningSec: 60,          // 1 minute before break
   theme: 'mountain',
 };
 
@@ -47,6 +50,7 @@ function updateSettings(partial) {
   next.breakDurationSec = clamp(next.breakDurationSec, 5, 60 * 30);
   next.idleThresholdSec = clamp(next.idleThresholdSec, 30, 60 * 60);
   next.snoozeMinutes = clamp(next.snoozeMinutes, 1, 60);
+  next.preWarningSec = clamp(next.preWarningSec, 10, 600);
   store().set('settings', next);
   return next;
 }

@@ -56,6 +56,7 @@ function startApp() {
       broadcast('eyerest:tick', state);
     },
     onBreakStart: (state) => {
+      windows.closePreWarning();
       windows.showBreak(state, store.getSettings());
       broadcast('eyerest:break-start', state);
     },
@@ -66,6 +67,10 @@ function startApp() {
     },
     onIdleReset: (state) => {
       broadcast('eyerest:idle-reset', state);
+    },
+    onPreWarning: (state) => {
+      windows.showPreWarning(state);
+      broadcast('eyerest:pre-warning', state);
     },
   });
 
@@ -121,6 +126,26 @@ function registerIpc() {
   ipcMain.handle('timer:break-now', () => {
     timer.forceBreak();
     return timer.getState();
+  });
+  ipcMain.handle('timer:postpone', (_e, minutes = 1) => {
+    timer.postpone(Number(minutes) || 1);
+    windows.closePreWarning();
+    broadcast('eyerest:tick', timer.getState());
+    return timer.getState();
+  });
+  ipcMain.handle('timer:skip-next-from-prewarn', () => {
+    // Mark the upcoming break as skipped and reset the work cycle immediately.
+    timer.skipNextBreak();
+    // Advance workElapsed past duration so the skip fires on the next tick,
+    // resetting the cycle without entering break.
+    const s = timer.getState();
+    timer.workElapsedSec = s.workDurationSec;
+    windows.closePreWarning();
+    broadcast('eyerest:tick', timer.getState());
+    return timer.getState();
+  });
+  ipcMain.handle('prewarn:close', () => {
+    windows.closePreWarning();
   });
 }
 

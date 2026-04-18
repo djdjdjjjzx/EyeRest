@@ -15,11 +15,15 @@ contextBridge.exposeInMainWorld('eyerest', {
   snooze: (minutes) => ipcRenderer.invoke('timer:snooze', minutes),
   pauseToggle: () => ipcRenderer.invoke('timer:pause-toggle'),
   breakNow: () => ipcRenderer.invoke('timer:break-now'),
+  postpone: (minutes) => ipcRenderer.invoke('timer:postpone', minutes),
+  skipNextFromPreWarn: () => ipcRenderer.invoke('timer:skip-next-from-prewarn'),
+  closePreWarn: () => ipcRenderer.invoke('prewarn:close'),
   // events
   onTick: (cb) => ipcRenderer.on('eyerest:tick', (_e, s) => cb(s)),
   onBreakStart: (cb) => ipcRenderer.on('eyerest:break-start', (_e, s) => cb(s)),
   onBreakEnd: (cb) => ipcRenderer.on('eyerest:break-end', (_e, s) => cb(s)),
   onIdleReset: (cb) => ipcRenderer.on('eyerest:idle-reset', (_e, s) => cb(s)),
+  onPreWarning: (cb) => ipcRenderer.on('eyerest:pre-warning', (_e, s) => cb(s)),
   onSettings: (cb) => ipcRenderer.on('eyerest:settings', (_e, s) => cb(s)),
   onState: (cb) => ipcRenderer.on('eyerest:state', (_e, s) => cb(s)),
 });

@@ -9,12 +9,13 @@ let handlers = {};
 let isPaused = false;
 
 function loadTrayIcon() {
-  // Look for a real PNG; fall back to a tiny in-memory dot if none provided.
-  const candidates = [
-    path.join(__dirname, '..', '..', 'assets', 'icons', 'tray.png'),
-    path.join(__dirname, '..', '..', 'assets', 'icons', 'icon.png'),
-  ];
-  for (const p of candidates) {
+  const iconsDir = path.join(__dirname, '..', '..', 'assets', 'icons');
+  // On macOS prefer a monochrome template image so the menu bar can tint it.
+  const candidates = process.platform === 'darwin'
+    ? ['tray-mac.png', 'tray-mac@2x.png', 'tray.png', 'icon.png']
+    : ['tray.png', 'icon.png'];
+  for (const name of candidates) {
+    const p = path.join(iconsDir, name);
     if (fs.existsSync(p)) {
       const img = nativeImage.createFromPath(p);
       if (process.platform === 'darwin') img.setTemplateImage(true);

@@ -1,0 +1,33 @@
+<\!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <title>EyeRest — 即將休息</title>
+    <link rel="stylesheet" href="./prewarn.css" />
+  </head>
+  <body>
+    <div class="card">
+      <div class="row">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+            <path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"
+                  fill="currentColor" />
+            <circle cx="12" cy="12" r="2" fill="#0c2a33" />
+          </svg>
+        </div>
+        <div class="text">
+          <div class="title">該休息眼睛了</div>
+          <div class="sub"><span id="countdown">1:00</span> 後進入休息畫面</div>
+        </div>
+        <button class="close" id="close" title="關閉提醒">×</button>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="breakNow">立刻休息</button>
+        <button class="btn" id="plus3">再 3 分鐘</button>
+        <button class="btn btn-skip" id="skip">Skip</button>
+      </div>
+    </div>
+    <script src="./prewarn.js"></script>
+  </body>
+</html>

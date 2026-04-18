@@ -1,4 +1,4 @@
-// timer.js — core 20-20-20 state machine with idle-aware reset.
+// timer.js — core 20-20-20 state machine with idle-aware reset + pre-warning.
 //
 // Phases: 'work' | 'break' | 'paused'
 //
@@ -7,34 +7,43 @@
 //   * If idleSec >= idleThreshold while in work → reset workElapsed to 0.
 //     (User walked away → eyes already rested → restart the work cycle.)
 //   * If user comes back (idle drops), we just continue from 0.
+//   * When workElapsed reaches (workDuration - preWarningSec) → fire onPreWarning
+//     ONCE per cycle. (Renderer pops up the small "1 min to break" window.)
 //   * When workElapsed >= workDuration → enter break phase.
 //
 // Break phase:
 //   * Counts down breakDurationSec and then ends.
 //   * User can skip early (counts as incomplete) or wait full duration (completes).
 //
-// Paused: timer halts. Resumes from current state.
+// Postpone:
+//   * postpone(minutes): set workElapsed so the break happens `minutes` from now.
+//   * Resets the pre-warning flag so a new warning will fire 60s before the new
+//     break (if minutes > preWarningSec/60).
 
 class Timer {
-  constructor({ getSettings, getIdleSeconds, onTick, onBreakStart, onBreakEnd, onIdleReset }) {
+  constructor({ getSettings, getIdleSeconds, onTick, onBreakStart, onBreakEnd, onIdleReset, onPreWarning }) {
     this.getSettings = getSettings;
     this.getIdleSeconds = getIdleSeconds;
     this.onTick = onTick || (() => {});
     this.onBreakStart = onBreakStart || (() => {});
     this.onBreakEnd = onBreakEnd || (() => {});
     this.onIdleReset = onIdleReset || (() => {});
+    this.onPreWarning = onPreWarning || (() => {});
 
     const s = getSettings();
     this.workDurationSec = s.workDurationSec;
     this.breakDurationSec = s.breakDurationSec;
     this.idleThresholdSec = s.idleThresholdSec;
+    this.preWarningSec = s.preWarningSec;
+    this.preWarningEnabled = s.preWarningEnabled;
 
     this.phase = 'work';
     this.workElapsedSec = 0;
     this.breakElapsedSec = 0;
     this.paused = false;
     this.skipNext = false;
-    this.idleResetArmed = true; // prevents repeated onIdleReset spam during a single idle stretch
+    this.idleResetArmed = true;
+    this.preWarningFired = false; // reset whenever a new work cycle begins or postpone is called
     this.lastBreakDurationSec = 0;
 
     this._interval = null;
@@ -44,6 +53,8 @@ class Timer {
     this.workDurationSec = s.workDurationSec;
     this.breakDurationSec = s.breakDurationSec;
     this.idleThresholdSec = s.idleThresholdSec;
+    this.preWarningSec = s.preWarningSec;
+    this.preWarningEnabled = s.preWarningEnabled;
   }
 
   start() {
@@ -66,21 +77,28 @@ class Timer {
     this.skipNext = true;
   }
 
-  /** End an in-progress break early (counts as skipped). */
   endBreakEarly() {
     if (this.phase !== 'break') return;
     this._endBreak(false);
   }
 
-  /** Snooze: postpone the next break by N minutes (only meaningful in work phase). */
+  /** Snooze (used by tray menu): postpone the next break by N minutes. Same as postpone. */
   snooze(minutes = 5) {
-    if (this.phase !== 'work') return;
-    // Push workElapsed back so we have `minutes` more minutes until break.
-    const wantRemain = minutes * 60;
-    this.workElapsedSec = Math.max(0, this.workDurationSec - wantRemain);
+    this.postpone(minutes);
   }
 
-  /** Force a break immediately, regardless of elapsed work time. */
+  /**
+   * Postpone: ensure the break happens exactly `minutes` minutes from now.
+   * Used by both the snooze tray action and the pre-warning popup buttons.
+   */
+  postpone(minutes) {
+    if (this.phase !== 'work') return;
+    const wantRemain = Math.max(0, Math.floor(minutes * 60));
+    this.workElapsedSec = Math.max(0, this.workDurationSec - wantRemain);
+    // Allow a fresh pre-warning to fire for the new schedule.
+    this.preWarningFired = false;
+  }
+
   forceBreak() {
     if (this.phase !== 'work') return;
     this._startBreak();
@@ -95,6 +113,9 @@ class Timer {
       workDurationSec: this.workDurationSec,
       breakDurationSec: this.breakDurationSec,
       idleThresholdSec: this.idleThresholdSec,
+      preWarningSec: this.preWarningSec,
+      preWarningEnabled: this.preWarningEnabled,
+      preWarningFired: this.preWarningFired,
       lastBreakDurationSec: this.lastBreakDurationSec,
       skipNext: this.skipNext,
     };
@@ -110,26 +131,36 @@ class Timer {
       const idleSec = Math.max(0, Math.floor(this.getIdleSeconds()));
 
       if (idleSec >= this.idleThresholdSec) {
-        // User has been away long enough — count this as a rest.
         if (this.workElapsedSec > 0 && this.idleResetArmed) {
           this.workElapsedSec = 0;
+          this.preWarningFired = false; // reset so a future warning can fire
           this.idleResetArmed = false;
           this.onIdleReset(this.getState());
         }
-        // Don't increment workElapsed while idle.
         this.onTick(this.getState());
         return;
       }
 
-      // User is active again — re-arm idle reset for next idle stretch.
       this.idleResetArmed = true;
-
       this.workElapsedSec += 1;
+
+      // Pre-warning fires once when we cross the threshold.
+      if (
+        this.preWarningEnabled &&
+        !this.preWarningFired &&
+        this.preWarningSec > 0 &&
+        this.workElapsedSec >= this.workDurationSec - this.preWarningSec &&
+        this.workElapsedSec < this.workDurationSec
+      ) {
+        this.preWarningFired = true;
+        this.onPreWarning(this.getState());
+      }
 
       if (this.workElapsedSec >= this.workDurationSec) {
         if (this.skipNext) {
           this.skipNext = false;
           this.workElapsedSec = 0;
+          this.preWarningFired = false;
           this.onTick(this.getState());
           return;
         }
@@ -163,6 +194,7 @@ class Timer {
     this.workElapsedSec = 0;
     this.breakElapsedSec = 0;
     this.idleResetArmed = true;
+    this.preWarningFired = false;
     this.onBreakEnd(this.getState(), completed);
   }
 }

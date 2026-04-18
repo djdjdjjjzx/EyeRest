@@ -81,7 +81,8 @@ body {
   margin-bottom: 6px;
 }
 .row-head span { font-size: 14px; }
-.row-head output {
+.row-head output,
+.row-head .value {
   font-variant-numeric: tabular-nums;
   color: var(--accent);
   font-weight: 500;

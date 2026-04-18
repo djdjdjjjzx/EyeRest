@@ -6,6 +6,7 @@ const path = require('path');
 let breakWindows = [];
 let settingsWindow = null;
 let statsWindow = null;
+let preWarnWindow = null;
 
 const PRELOAD = path.join(__dirname, '..', 'preload', 'preload.js');
 
@@ -135,4 +136,48 @@ function openStats() {
   return statsWindow;
 }
 
-module.exports = { showBreak, closeBreak, openSettings, openStats };
+function showPreWarning(state) {
+  closePreWarning();
+  const display = screen.getPrimaryDisplay();
+  const w = 360, h = 150;
+  const x = display.workArea.x + display.workArea.width - w - 20;
+  const y = display.workArea.y + display.workArea.height - h - 20;
+  preWarnWindow = new BrowserWindow({
+    x, y, width: w, height: h,
+    frame: false, transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    hasShadow: false, // the CSS card draws its own shadow
+    backgroundColor: '#00000000',
+    focusable: true,
+    show: false,
+    webPreferences: {
+      preload: PRELOAD,
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  preWarnWindow.setAlwaysOnTop(true, 'screen-saver');
+  const remainSec = Math.max(0, state.workDurationSec - state.workElapsedSec);
+  preWarnWindow.loadFile(
+    path.join(__dirname, '..', 'renderer', 'prewarn', 'index.html'),
+    { query: { remainSec: String(remainSec) } },
+  );
+  preWarnWindow.once('ready-to-show', () => preWarnWindow.show());
+  preWarnWindow.on('closed', () => { preWarnWindow = null; });
+}
+
+function closePreWarning() {
+  if (preWarnWindow && !preWarnWindow.isDestroyed()) preWarnWindow.destroy();
+  preWarnWindow = null;
+}
+
+module.exports = {
+  showBreak,
+  closeBreak,
+  openSettings,
+  openStats,
+  showPreWarning,
+  closePreWarning,
+};
