@@ -226,3 +226,47 @@ body.mode-notification .actions { margin-top: 4px; }
 }
 .btn:hover { background: var(--c-btn-hover); transform: translateY(-1px); }
 .btn:active { transform: translateY(0); }
+
+
+/* ========== Long-break theme ("夕陽森林") ========== */
+
+body.is-long {
+  --c-sky-top: #2a1340;
+  --c-sky-mid: #4a1f47;
+  --c-sky-low: #8c3f4a;
+  --c-lake: #3a1f33;
+  --c-lake-hl: #d8885c;
+  --c-ring: #ffb26b;
+  --c-btn: rgba(255, 210, 180, 0.14);
+  --c-btn-hover: rgba(255, 210, 180, 0.24);
+}
+
+body.is-long.mode-fullscreen {
+  background: linear-gradient(180deg,
+    var(--c-sky-top) 0%,
+    var(--c-sky-mid) 35%,
+    var(--c-sky-low) 70%,
+    var(--c-lake) 100%);
+}
+
+body.is-long.mode-overlay {
+  background: linear-gradient(180deg, rgba(42, 19, 64, 0.86), rgba(140, 63, 74, 0.88));
+}
+
+body.is-long .ridge-back  { fill: #5a2a54; opacity: 0.65; }
+body.is-long .ridge-mid   { fill: #422041; opacity: 0.85; }
+body.is-long .ridge-front { fill: #2e1a30; }
+
+body.is-long .lake {
+  background:
+    linear-gradient(180deg, rgba(216, 136, 92, 0.25), rgba(58, 31, 51, 0.95) 60%),
+    repeating-linear-gradient(180deg, transparent 0 10px, rgba(255, 200, 150, 0.04) 10px 11px);
+}
+
+body.is-long .ring-progress {
+  filter: drop-shadow(0 0 16px rgba(255, 178, 107, 0.55));
+}
+
+body.is-long.mode-notification .content {
+  background: linear-gradient(160deg, rgba(74, 31, 71, 0.98), rgba(140, 63, 74, 0.96));
+}

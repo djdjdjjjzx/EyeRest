@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('eyerest', {
   skipBreak: () => ipcRenderer.invoke('timer:skip-break'),
   snooze: (minutes) => ipcRenderer.invoke('timer:snooze', minutes),
   pauseToggle: () => ipcRenderer.invoke('timer:pause-toggle'),
+  pauseFor: (minutes) => ipcRenderer.invoke('timer:pause-for', minutes),
   breakNow: () => ipcRenderer.invoke('timer:break-now'),
   postpone: (minutes) => ipcRenderer.invoke('timer:postpone', minutes),
   skipNextFromPreWarn: () => ipcRenderer.invoke('timer:skip-next-from-prewarn'),

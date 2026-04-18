@@ -1,27 +1,33 @@
-// timer.js — core 20-20-20 state machine with idle-aware reset + pre-warning.
+// timer.js — core 20-20-20 state machine with idle-aware reset + pre-warning
+// + long-break cycling + skip penalty + timed pause.
 //
 // Phases: 'work' | 'break' | 'paused'
 //
-// Work phase:
-//   * Each tick (1s) we read powerMonitor.getSystemIdleTime() (in seconds).
-//   * If idleSec >= idleThreshold while in work → reset workElapsed to 0.
-//     (User walked away → eyes already rested → restart the work cycle.)
-//   * If user comes back (idle drops), we just continue from 0.
-//   * When workElapsed reaches (workDuration - preWarningSec) → fire onPreWarning
-//     ONCE per cycle. (Renderer pops up the small "1 min to break" window.)
-//   * When workElapsed >= workDuration → enter break phase.
+// Long break cycling:
+//   * Every Nth break is a "long break" (longBreakDurationSec, e.g. 3 min).
+//   * Pattern: 1, 2, LONG, 1, 2, LONG. N = longBreakEvery (default 3).
 //
-// Break phase:
-//   * Counts down breakDurationSec and then ends.
-//   * User can skip early (counts as incomplete) or wait full duration (completes).
+// Skip penalty:
+//   * When the user skips an upcoming break (tray "跳過下一次" or pre-warning
+//     Skip), if forceLongBreakAfterSkip is on, nextBreakIsLong is set so the
+//     next break taken is long.
+//   * Does NOT apply to skipping a break already in progress (Esc during overlay).
 //
-// Postpone:
-//   * postpone(minutes): set workElapsed so the break happens `minutes` from now.
-//   * Resets the pre-warning flag so a new warning will fire 60s before the new
-//     break (if minutes > preWarningSec/60).
+// Timed pause:
+//   * pauseFor(minutes) pauses + auto-resumes via setTimeout after `minutes`.
+//   * State exposes pausedUntilMs for UI countdown.
 
 class Timer {
-  constructor({ getSettings, getIdleSeconds, onTick, onBreakStart, onBreakEnd, onIdleReset, onPreWarning }) {
+  constructor({
+    getSettings,
+    getIdleSeconds,
+    onTick,
+    onBreakStart,
+    onBreakEnd,
+    onIdleReset,
+    onPreWarning,
+    onPauseChange,
+  }) {
     this.getSettings = getSettings;
     this.getIdleSeconds = getIdleSeconds;
     this.onTick = onTick || (() => {});
@@ -29,6 +35,7 @@ class Timer {
     this.onBreakEnd = onBreakEnd || (() => {});
     this.onIdleReset = onIdleReset || (() => {});
     this.onPreWarning = onPreWarning || (() => {});
+    this.onPauseChange = onPauseChange || (() => {});
 
     const s = getSettings();
     this.workDurationSec = s.workDurationSec;
@@ -36,15 +43,25 @@ class Timer {
     this.idleThresholdSec = s.idleThresholdSec;
     this.preWarningSec = s.preWarningSec;
     this.preWarningEnabled = s.preWarningEnabled;
+    this.longBreakEnabled = s.longBreakEnabled !== false;
+    this.longBreakDurationSec = s.longBreakDurationSec || 180;
+    this.longBreakEvery = s.longBreakEvery || 3;
+    this.forceLongBreakAfterSkip = s.forceLongBreakAfterSkip !== false;
 
     this.phase = 'work';
     this.workElapsedSec = 0;
     this.breakElapsedSec = 0;
     this.paused = false;
+    this.pausedUntilMs = null;
+    this._pauseTimeout = null;
     this.skipNext = false;
+    this.nextBreakIsLong = false;
+    this.breaksTaken = 0;
     this.idleResetArmed = true;
-    this.preWarningFired = false; // reset whenever a new work cycle begins or postpone is called
+    this.preWarningFired = false;
     this.lastBreakDurationSec = 0;
+    this.currentBreakDurationSec = this.breakDurationSec;
+    this.currentBreakIsLong = false;
 
     this._interval = null;
   }
@@ -55,6 +72,10 @@ class Timer {
     this.idleThresholdSec = s.idleThresholdSec;
     this.preWarningSec = s.preWarningSec;
     this.preWarningEnabled = s.preWarningEnabled;
+    this.longBreakEnabled = s.longBreakEnabled !== false;
+    this.longBreakDurationSec = s.longBreakDurationSec || this.longBreakDurationSec;
+    this.longBreakEvery = s.longBreakEvery || this.longBreakEvery;
+    this.forceLongBreakAfterSkip = s.forceLongBreakAfterSkip !== false;
   }
 
   start() {
@@ -65,16 +86,47 @@ class Timer {
   stop() {
     if (this._interval) clearInterval(this._interval);
     this._interval = null;
+    this._clearPauseTimeout();
+  }
+
+  _clearPauseTimeout() {
+    if (this._pauseTimeout) {
+      clearTimeout(this._pauseTimeout);
+      this._pauseTimeout = null;
+    }
+    this.pausedUntilMs = null;
   }
 
   togglePause() {
     this.paused = !this.paused;
+    this._clearPauseTimeout();
+    this.onPauseChange(this.getState());
+    this.onTick(this.getState());
+    return this.paused;
+  }
+
+  pauseFor(minutes) {
+    const mins = Math.max(1, Math.floor(Number(minutes) || 0));
+    this._clearPauseTimeout();
+    this.paused = true;
+    this.pausedUntilMs = Date.now() + mins * 60 * 1000;
+    this._pauseTimeout = setTimeout(() => {
+      this._pauseTimeout = null;
+      this.pausedUntilMs = null;
+      this.paused = false;
+      this.onPauseChange(this.getState());
+      this.onTick(this.getState());
+    }, mins * 60 * 1000);
+    this.onPauseChange(this.getState());
     this.onTick(this.getState());
     return this.paused;
   }
 
   skipNextBreak() {
     this.skipNext = true;
+    if (this.forceLongBreakAfterSkip && this.longBreakEnabled) {
+      this.nextBreakIsLong = true;
+    }
   }
 
   endBreakEarly() {
@@ -82,20 +134,14 @@ class Timer {
     this._endBreak(false);
   }
 
-  /** Snooze (used by tray menu): postpone the next break by N minutes. Same as postpone. */
   snooze(minutes = 5) {
     this.postpone(minutes);
   }
 
-  /**
-   * Postpone: ensure the break happens exactly `minutes` minutes from now.
-   * Used by both the snooze tray action and the pre-warning popup buttons.
-   */
   postpone(minutes) {
     if (this.phase !== 'work') return;
     const wantRemain = Math.max(0, Math.floor(minutes * 60));
     this.workElapsedSec = Math.max(0, this.workDurationSec - wantRemain);
-    // Allow a fresh pre-warning to fire for the new schedule.
     this.preWarningFired = false;
   }
 
@@ -105,20 +151,43 @@ class Timer {
   }
 
   getState() {
+    const activeBreakDuration = this.phase === 'break'
+      ? this.currentBreakDurationSec
+      : this._predictNextBreakDuration();
     return {
       phase: this.phase,
       paused: this.paused,
+      pausedUntilMs: this.pausedUntilMs,
       workElapsedSec: this.workElapsedSec,
       breakElapsedSec: this.breakElapsedSec,
       workDurationSec: this.workDurationSec,
-      breakDurationSec: this.breakDurationSec,
+      breakDurationSec: activeBreakDuration,
+      normalBreakDurationSec: this.breakDurationSec,
+      longBreakDurationSec: this.longBreakDurationSec,
       idleThresholdSec: this.idleThresholdSec,
       preWarningSec: this.preWarningSec,
       preWarningEnabled: this.preWarningEnabled,
       preWarningFired: this.preWarningFired,
       lastBreakDurationSec: this.lastBreakDurationSec,
       skipNext: this.skipNext,
+      nextBreakIsLong: this.nextBreakIsLong,
+      isLongBreak: this.phase === 'break' ? this.currentBreakIsLong : false,
+      breaksTaken: this.breaksTaken,
+      longBreakEnabled: this.longBreakEnabled,
+      longBreakEvery: this.longBreakEvery,
     };
+  }
+
+  _predictNextBreakDuration() {
+    return this._decideNextBreakIsLong() ? this.longBreakDurationSec : this.breakDurationSec;
+  }
+
+  _decideNextBreakIsLong() {
+    if (!this.longBreakEnabled) return false;
+    if (this.nextBreakIsLong) return true;
+    const n = this.longBreakEvery;
+    if (n < 2) return false;
+    return ((this.breaksTaken + 1) % n) === 0;
   }
 
   _tick() {
@@ -133,7 +202,7 @@ class Timer {
       if (idleSec >= this.idleThresholdSec) {
         if (this.workElapsedSec > 0 && this.idleResetArmed) {
           this.workElapsedSec = 0;
-          this.preWarningFired = false; // reset so a future warning can fire
+          this.preWarningFired = false;
           this.idleResetArmed = false;
           this.onIdleReset(this.getState());
         }
@@ -144,7 +213,6 @@ class Timer {
       this.idleResetArmed = true;
       this.workElapsedSec += 1;
 
-      // Pre-warning fires once when we cross the threshold.
       if (
         this.preWarningEnabled &&
         !this.preWarningFired &&
@@ -174,7 +242,7 @@ class Timer {
 
     if (this.phase === 'break') {
       this.breakElapsedSec += 1;
-      if (this.breakElapsedSec >= this.breakDurationSec) {
+      if (this.breakElapsedSec >= this.currentBreakDurationSec) {
         this._endBreak(true);
       } else {
         this.onTick(this.getState());
@@ -183,8 +251,15 @@ class Timer {
   }
 
   _startBreak() {
+    const isLong = this._decideNextBreakIsLong();
+    this.currentBreakIsLong = isLong;
+    this.currentBreakDurationSec = isLong
+      ? this.longBreakDurationSec
+      : this.breakDurationSec;
+    this.nextBreakIsLong = false;
     this.phase = 'break';
     this.breakElapsedSec = 0;
+    this.breaksTaken += 1;
     this.onBreakStart(this.getState());
   }
 
@@ -195,6 +270,8 @@ class Timer {
     this.breakElapsedSec = 0;
     this.idleResetArmed = true;
     this.preWarningFired = false;
+    this.currentBreakIsLong = false;
+    this.currentBreakDurationSec = this.breakDurationSec;
     this.onBreakEnd(this.getState(), completed);
   }
 }

@@ -4,7 +4,7 @@ const Store = require('electron-store');
 
 const DEFAULT_SETTINGS = {
   workDurationSec: 20 * 60,   // 20 minutes
-  breakDurationSec: 20,       // 20 seconds
+  breakDurationSec: 20,       // 20 seconds (normal break)
   idleThresholdSec: 2 * 60,   // 2 minutes
   reminderMode: 'fullscreen', // 'fullscreen' | 'overlay' | 'notification'
   soundEnabled: true,
@@ -15,6 +15,12 @@ const DEFAULT_SETTINGS = {
   // Pre-warning: small corner popup before the break with +1 / +5 / Skip buttons.
   preWarningEnabled: true,
   preWarningSec: 60,          // 1 minute before break
+  // Long break: every Nth break is a longer "deep rest". Pomodoro-like.
+  longBreakEnabled: true,
+  longBreakDurationSec: 180,  // 3 minutes
+  longBreakEvery: 3,          // every 3rd break is long
+  // Skip penalty: if user skips an upcoming break, force the next one to be long.
+  forceLongBreakAfterSkip: true,
   theme: 'mountain',
 };
 
@@ -51,6 +57,8 @@ function updateSettings(partial) {
   next.idleThresholdSec = clamp(next.idleThresholdSec, 30, 60 * 60);
   next.snoozeMinutes = clamp(next.snoozeMinutes, 1, 60);
   next.preWarningSec = clamp(next.preWarningSec, 10, 600);
+  next.longBreakDurationSec = clamp(next.longBreakDurationSec, 30, 60 * 30);
+  next.longBreakEvery = clamp(next.longBreakEvery, 2, 20);
   store().set('settings', next);
   return next;
 }

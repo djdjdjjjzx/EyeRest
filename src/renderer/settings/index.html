@@ -81,6 +81,37 @@
     </section>
 
     <section class="card">
+      <h3>長休息（深度休息）</h3>
+      <label class="toggle">
+        <input type="checkbox" id="longBreakEnabled" />
+        <span>每隔幾次休息，改成更長的「深度休息」</span>
+      </label>
+
+      <label class="row">
+        <div class="row-head">
+          <span>每幾次休息一次長休息</span>
+          <span class="value" id="longEveryOut">3 次</span>
+        </div>
+        <input type="range" id="longEvery" min="2" max="10" step="1" value="3" />
+        <div class="hint">例如設為 3 → 第 3、6、9 次休息變成長休息</div>
+      </label>
+
+      <label class="row">
+        <div class="row-head">
+          <span>長休息時間</span>
+          <span class="value" id="longDurOut">3 分</span>
+        </div>
+        <input type="range" id="longDur" min="60" max="900" step="30" value="180" />
+        <div class="hint">建議站起來、走走、看遠方</div>
+      </label>
+
+      <label class="toggle">
+        <input type="checkbox" id="forceLongAfterSkip" />
+        <span>使用 Skip 跳過後，下一次強制改成長休息</span>
+      </label>
+    </section>
+
+    <section class="card">
       <h3>系統</h3>
       <label class="toggle">
         <input type="checkbox" id="autoLaunch" />

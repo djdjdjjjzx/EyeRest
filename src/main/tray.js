@@ -10,7 +10,6 @@ let isPaused = false;
 
 function loadTrayIcon() {
   const iconsDir = path.join(__dirname, '..', '..', 'assets', 'icons');
-  // On macOS prefer a monochrome template image so the menu bar can tint it.
   const candidates = process.platform === 'darwin'
     ? ['tray-mac.png', 'tray-mac@2x.png', 'tray.png', 'icon.png']
     : ['tray.png', 'icon.png'];
@@ -22,7 +21,6 @@ function loadTrayIcon() {
       return img;
     }
   }
-  // 1x1 transparent PNG fallback so the app still launches without artwork.
   const buf = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAFklEQVR4nGNgGAWjYBSMglEwCkYBPgAB8wABr4r8ZQAAAABJRU5ErkJggg==',
     'base64',
@@ -38,17 +36,36 @@ function createTray(h) {
   return tray;
 }
 
-function updateTrayMenu({ paused }) {
-  isPaused = !!paused;
-  if (!tray) return;
+function updateTrayMenu({ paused, pausedUntilMs }) {
+  isPaused = Boolean(paused);
+  let pauseLabel;
+  if (isPaused) {
+    if (pausedUntilMs) {
+      const remainMs = Math.max(0, pausedUntilMs - Date.now());
+      const remainMin = Math.ceil(remainMs / 60000);
+      pauseLabel = `繼續（剩 ${remainMin} 分）`;
+    } else {
+      pauseLabel = '繼續';
+    }
+  } else {
+    pauseLabel = '暫停';
+  }
+  if (tray == null) return;
   const menu = Menu.buildFromTemplate([
     { label: 'EyeRest', enabled: false },
     { type: 'separator' },
     { label: '立刻休息', click: () => handlers.onTakeBreakNow?.() },
     { label: '跳過下一次休息', click: () => handlers.onSkipNext?.() },
+    { type: 'separator' },
+    { label: pauseLabel, click: () => handlers.onPauseToggle?.() },
     {
-      label: isPaused ? '繼續' : '暫停',
-      click: () => handlers.onPauseToggle?.(),
+      label: '定時暫停',
+      enabled: isPaused === false,
+      submenu: [
+        { label: '15 分鐘', click: () => handlers.onPauseFor?.(15) },
+        { label: '30 分鐘', click: () => handlers.onPauseFor?.(30) },
+        { label: '1 小時',  click: () => handlers.onPauseFor?.(60) },
+      ],
     },
     { type: 'separator' },
     { label: '設定…', click: () => handlers.onOpenSettings?.() },

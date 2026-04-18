@@ -62,6 +62,7 @@ function showBreak(state, settings) {
         breakDurationSec: String(state.breakDurationSec),
         allowSkip: String(settings.allowSkip),
         soundEnabled: String(settings.soundEnabled),
+        isLongBreak: String(state.isLongBreak === true),
       },
     });
     win.once('ready-to-show', () => win.show());
@@ -82,7 +83,7 @@ function openSmallReminder(state) {
     webPreferences: { preload: PRELOAD, contextIsolation: true, nodeIntegration: false },
   });
   win.loadFile(path.join(__dirname, '..', 'renderer', 'break', 'index.html'), {
-    query: { mode: 'notification', breakDurationSec: String(state.breakDurationSec), allowSkip: 'true' },
+    query: { mode: 'notification', breakDurationSec: String(state.breakDurationSec), allowSkip: 'true', isLongBreak: String(state.isLongBreak === true) },
   });
   breakWindows.push(win);
 }

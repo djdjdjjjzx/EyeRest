@@ -26,7 +26,6 @@ function broadcast(channel, payload) {
 }
 
 function startApp() {
-  // On macOS, hide from Dock — this is a tray-resident utility.
   if (process.platform === 'darwin' && app.dock) app.dock.hide();
 
   createTray({
@@ -34,8 +33,15 @@ function startApp() {
     onOpenStats: () => windows.openStats(),
     onPauseToggle: () => {
       const paused = timer.togglePause();
-      updateTrayMenu({ paused });
-      broadcast('eyerest:state', timer.getState());
+      const st = timer.getState();
+      updateTrayMenu({ paused, pausedUntilMs: st.pausedUntilMs });
+      broadcast('eyerest:state', st);
+    },
+    onPauseFor: (minutes) => {
+      timer.pauseFor(minutes);
+      const st = timer.getState();
+      updateTrayMenu({ paused: st.paused, pausedUntilMs: st.pausedUntilMs });
+      broadcast('eyerest:state', st);
     },
     onSkipNext: () => {
       timer.skipNextBreak();
@@ -72,11 +78,14 @@ function startApp() {
       windows.showPreWarning(state);
       broadcast('eyerest:pre-warning', state);
     },
+    onPauseChange: (state) => {
+      updateTrayMenu({ paused: state.paused, pausedUntilMs: state.pausedUntilMs });
+      broadcast('eyerest:state', state);
+    },
   });
 
   timer.start();
 
-  // Apply auto-launch based on stored setting.
   applyAutoLaunch(store.getSettings().autoLaunch).catch((err) => {
     console.error('Auto-launch error:', err);
   });
@@ -85,15 +94,23 @@ function startApp() {
 }
 
 function formatTooltip(state) {
-  if (state.paused) return 'EyeRest — 已暫停';
+  if (state.paused) {
+    if (state.pausedUntilMs) {
+      const ms = Math.max(0, state.pausedUntilMs - Date.now());
+      const m = Math.ceil(ms / 60000);
+      return `EyeRest — 已暫停（剩 ${m} 分）`;
+    }
+    return 'EyeRest — 已暫停';
+  }
   if (state.phase === 'break') {
     const remain = Math.max(0, state.breakDurationSec - state.breakElapsedSec);
-    return `EyeRest — 休息中 ${remain}s`;
+    return `EyeRest — 休息中 ${remain}s${state.isLongBreak ? '（長休息）' : ''}`;
   }
   const remainSec = Math.max(0, state.workDurationSec - state.workElapsedSec);
   const m = Math.floor(remainSec / 60);
   const s = remainSec % 60;
-  return `EyeRest — 距下次休息 ${m}:${String(s).padStart(2, '0')}`;
+  const tag = state.nextBreakIsLong ? '（下次為長休息）' : '';
+  return `EyeRest — 距下次休息 ${m}:${String(s).padStart(2, '0')}${tag}`;
 }
 
 function registerIpc() {
@@ -120,8 +137,15 @@ function registerIpc() {
   });
   ipcMain.handle('timer:pause-toggle', () => {
     const paused = timer.togglePause();
-    updateTrayMenu({ paused });
-    return timer.getState();
+    const st = timer.getState();
+    updateTrayMenu({ paused, pausedUntilMs: st.pausedUntilMs });
+    return st;
+  });
+  ipcMain.handle('timer:pause-for', (_e, minutes) => {
+    timer.pauseFor(Number(minutes) || 15);
+    const st = timer.getState();
+    updateTrayMenu({ paused: st.paused, pausedUntilMs: st.pausedUntilMs });
+    return st;
   });
   ipcMain.handle('timer:break-now', () => {
     timer.forceBreak();
@@ -134,10 +158,7 @@ function registerIpc() {
     return timer.getState();
   });
   ipcMain.handle('timer:skip-next-from-prewarn', () => {
-    // Mark the upcoming break as skipped and reset the work cycle immediately.
     timer.skipNextBreak();
-    // Advance workElapsed past duration so the skip fires on the next tick,
-    // resetting the cycle without entering break.
     const s = timer.getState();
     timer.workElapsedSec = s.workDurationSec;
     windows.closePreWarning();
@@ -152,12 +173,10 @@ function registerIpc() {
 app.whenReady().then(startApp);
 
 app.on('second-instance', () => {
-  // If user re-launches, just open settings.
   windows.openSettings();
 });
 
 app.on('window-all-closed', (e) => {
-  // Tray app: do not quit when windows close.
   e.preventDefault?.();
 });
 

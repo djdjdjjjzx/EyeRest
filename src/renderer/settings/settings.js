@@ -29,6 +29,12 @@ function runInit() {
   const preWarningEnabled = $('preWarningEnabled');
   const preWarnSec        = $('preWarnSec');
   const preWarnOut        = $('preWarnOut');
+  const longBreakEnabled  = $('longBreakEnabled');
+  const longEvery         = $('longEvery');
+  const longEveryOut      = $('longEveryOut');
+  const longDur           = $('longDur');
+  const longDurOut        = $('longDurOut');
+  const forceLongAfterSkip = $('forceLongAfterSkip');
   const breakNowBtn       = $('breakNow');
   const pauseToggleBtn    = $('pauseToggle');
   // Do NOT name this `status` — window.status is a legacy browser property
@@ -67,6 +73,12 @@ function runInit() {
       if (preWarningEnabled) preWarningEnabled.checked = s.preWarningEnabled !== false;
       if (preWarnSec)        preWarnSec.value          = s.preWarningSec || 60;
       text(preWarnOut, formatSec(preWarnSec ? preWarnSec.value : 60));
+      if (longBreakEnabled)   longBreakEnabled.checked   = s.longBreakEnabled !== false;
+      if (longEvery)          longEvery.value            = s.longBreakEvery || 3;
+      text(longEveryOut, `${longEvery ? longEvery.value : 3} 次`);
+      if (longDur)            longDur.value              = s.longBreakDurationSec || 180;
+      text(longDurOut, formatSec(longDur ? longDur.value : 180));
+      if (forceLongAfterSkip) forceLongAfterSkip.checked = s.forceLongBreakAfterSkip !== false;
     } catch (err) {
       console.error('[EyeRest settings] loadSettings failed:', err);
     }
@@ -129,6 +141,14 @@ function runInit() {
     label: (v) => formatSec(v),
     save:  (v) => ({ preWarningSec: Number(v) }),
   });
+  bindSlider(longEvery, longEveryOut, {
+    label: (v) => `${v} 次`,
+    save:  (v) => ({ longBreakEvery: Number(v) }),
+  });
+  bindSlider(longDur, longDurOut, {
+    label: (v) => formatSec(v),
+    save:  (v) => ({ longBreakDurationSec: Number(v) }),
+  });
 
   // --- segmented "reminder mode" ---
   if (modeSeg) {
@@ -145,6 +165,8 @@ function runInit() {
   if (allowSkip)         allowSkip.addEventListener('change',         () => save({ allowSkip:         allowSkip.checked }));
   if (autoLaunch)        autoLaunch.addEventListener('change',        () => save({ autoLaunch:        autoLaunch.checked }));
   if (preWarningEnabled) preWarningEnabled.addEventListener('change', () => save({ preWarningEnabled: preWarningEnabled.checked }));
+  if (longBreakEnabled)  longBreakEnabled.addEventListener('change',  () => save({ longBreakEnabled:  longBreakEnabled.checked }));
+  if (forceLongAfterSkip) forceLongAfterSkip.addEventListener('change', () => save({ forceLongBreakAfterSkip: forceLongAfterSkip.checked }));
 
   // --- buttons ---
   if (breakNowBtn)    breakNowBtn.addEventListener('click',    () => window.eyerest.breakNow());

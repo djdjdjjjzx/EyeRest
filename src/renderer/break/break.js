@@ -9,6 +9,14 @@
 
   document.body.classList.remove('mode-fullscreen');
   document.body.classList.add(`mode-${mode}`);
+  const isLongBreak = params.get('isLongBreak') === 'true';
+  if (isLongBreak) document.body.classList.add('is-long');
+  const $label = document.querySelector('.label');
+  const $guideEl = document.getElementById('guide');
+  if (isLongBreak) {
+    if ($label) $label.textContent = '深呼吸時刻 · 長休息';
+    if ($guideEl) $guideEl.textContent = '站起來伸個懶腰，或眺望遠方 3 分鐘';
+  }
 
   const $count = document.getElementById('count');
   const $ring = document.querySelector('.ring-progress');

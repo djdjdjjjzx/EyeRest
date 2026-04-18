@@ -24,7 +24,11 @@ function makeTimer({
   breakSec = 3,
   idleSec = 5,
   preWarningEnabled = true,
-  preWarningSec = 0, // default off unless explicitly set
+  preWarningSec = 0,
+  longBreakEnabled = false,
+  longBreakDurationSec = 7,
+  longBreakEvery = 3,
+  forceLongBreakAfterSkip = false,
 } = {}) {
   let idle = 0;
   const events = [];
@@ -34,12 +38,16 @@ function makeTimer({
     idleThresholdSec: idleSec,
     preWarningEnabled,
     preWarningSec,
+    longBreakEnabled,
+    longBreakDurationSec,
+    longBreakEvery,
+    forceLongBreakAfterSkip,
   };
   const timer = new Timer({
     getSettings: () => settings,
     getIdleSeconds: () => idle,
     onTick: (s) => events.push({ type: 'tick', phase: s.phase, work: s.workElapsedSec, brk: s.breakElapsedSec }),
-    onBreakStart: () => events.push({ type: 'break-start' }),
+    onBreakStart: (s) => events.push({ type: 'break-start', isLongBreak: s.isLongBreak, breakDurationSec: s.breakDurationSec }),
     onBreakEnd: (_s, completed) => events.push({ type: 'break-end', completed }),
     onIdleReset: () => events.push({ type: 'idle-reset' }),
     onPreWarning: (s) => events.push({ type: 'pre-warning', work: s.workElapsedSec }),
@@ -229,6 +237,111 @@ console.log('Test 14: new cycle after break gets pre-warning again');
   step(3); // work=3, pre-warning again
   assertEq('pre-warning fires in each cycle',
     events.filter(e => e.type === 'pre-warning').length, 2);
+}
+
+// ---------- Test 15: every 3rd break is a long break ----------
+console.log('Test 15: every Nth break is long (Pomodoro pattern)');
+{
+  const { timer, step, events } = makeTimer({
+    workSec: 2, breakSec: 2, longBreakEnabled: true, longBreakDurationSec: 5, longBreakEvery: 3,
+  });
+  // Cycle 1
+  step(2); assertEq('break1 is normal', events.filter(e => e.type === 'break-start').pop().isLongBreak, false);
+  step(2); // end break1
+  // Cycle 2
+  step(2); assertEq('break2 is normal', events.filter(e => e.type === 'break-start').pop().isLongBreak, false);
+  step(2);
+  // Cycle 3 -> long
+  step(2);
+  const b3 = events.filter(e => e.type === 'break-start').pop();
+  assertEq('break3 is long',            b3.isLongBreak, true);
+  assertEq('break3 uses longBreak dur', b3.breakDurationSec, 5);
+  step(5);
+  // Cycle 4 -> back to normal
+  step(2);
+  assertEq('break4 is normal again', events.filter(e => e.type === 'break-start').pop().isLongBreak, false);
+}
+
+// ---------- Test 16: skip-next sets penalty flag → next break is long ----------
+console.log('Test 16: force long break after skip');
+{
+  const { timer, step, events } = makeTimer({
+    workSec: 2, breakSec: 2,
+    longBreakEnabled: true, longBreakDurationSec: 5, longBreakEvery: 100,
+    forceLongBreakAfterSkip: true,
+  });
+  timer.skipNextBreak();
+  step(2); // crosses threshold and skips (no break)
+  assertEq('no break started yet', events.filter(e => e.type === 'break-start').length, 0);
+  assertEq('nextBreakIsLong flag set', timer.getState().nextBreakIsLong, true);
+  step(2); // next cycle enters break
+  const b = events.filter(e => e.type === 'break-start').pop();
+  assertEq('break after skip is long', b.isLongBreak, true);
+  assertEq('break after skip uses long dur', b.breakDurationSec, 5);
+  // Flag is consumed
+  assertEq('penalty flag cleared after consumption', timer.getState().nextBreakIsLong, false);
+}
+
+// ---------- Test 17: skip penalty disabled → next break stays normal ----------
+console.log('Test 17: forceLongBreakAfterSkip=false → no penalty');
+{
+  const { timer, step, events } = makeTimer({
+    workSec: 2, breakSec: 2,
+    longBreakEnabled: true, longBreakDurationSec: 5, longBreakEvery: 100,
+    forceLongBreakAfterSkip: false,
+  });
+  timer.skipNextBreak();
+  step(2);
+  step(2);
+  const b = events.filter(e => e.type === 'break-start').pop();
+  assertEq('break after skip remains normal', b.isLongBreak, false);
+  assertEq('break after skip uses normal dur', b.breakDurationSec, 2);
+}
+
+// ---------- Test 18: pauseFor auto-resumes after timeout ----------
+console.log('Test 18: pauseFor auto-resumes');
+{
+  const { timer, step } = makeTimer({ workSec: 100 });
+  step(3);
+  // Use fake timers for reliable auto-resume test.
+  const originalSetTimeout = global.setTimeout;
+  let scheduledCb = null;
+  global.setTimeout = (cb, ms) => { scheduledCb = cb; return 42; };
+  try {
+    timer.pauseFor(15);
+    assertEq('paused after pauseFor', timer.getState().paused, true);
+    assertEq('pausedUntilMs is set', typeof timer.getState().pausedUntilMs, 'number');
+    step(5); // should not advance because paused
+    assertEq('work not advanced while paused', timer.getState().workElapsedSec, 3);
+    // Fire the scheduled auto-resume
+    scheduledCb && scheduledCb();
+    assertEq('auto-resumed after timeout fires', timer.getState().paused, false);
+    step(2);
+    assertEq('work resumes after auto-unpause', timer.getState().workElapsedSec, 5);
+  } finally {
+    global.setTimeout = originalSetTimeout;
+  }
+}
+
+// ---------- Test 19: togglePause cancels pending timed-pause ----------
+console.log('Test 19: togglePause cancels pauseFor timeout');
+{
+  const { timer } = makeTimer({ workSec: 100 });
+  const originalSetTimeout = global.setTimeout;
+  const originalClearTimeout = global.clearTimeout;
+  let cleared = false;
+  global.setTimeout = () => 99;
+  global.clearTimeout = () => { cleared = true; };
+  try {
+    timer.pauseFor(30);
+    timer.togglePause(); // should unpause + clear
+    assertEq('clearTimeout called',         cleared, true);
+    assertEq('pausedUntilMs cleared',       timer.getState().pausedUntilMs, null);
+    assertEq('paused is false after unpause', timer.getState().paused, false);
+  } finally {
+    global.setTimeout = originalSetTimeout;
+    global.clearTimeout = originalClearTimeout;
+  }
 }
 
 // ---------- Summary ----------
