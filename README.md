@@ -1,104 +1,95 @@
 # EyeRest
 
-跨平台（Windows + macOS）的護眼提醒小工具，基於 **20-20-20 護眼法則**：
-每工作 20 分鐘，提醒你看 6 公尺外的物體 20 秒，讓眼睛放鬆。
+<p align="center">
+  <strong>一個乾淨、優雅的護眼提醒小工具。</strong><br>
+  跨平台（Windows / macOS），遵循 20-20-20 護眼法則，還會聰明地偵測你有沒有在座位上。
+</p>
 
-比一般 Pomodoro 更聰明的地方：**它會偵測你是否真的在電腦前**。
-如果你離開座位超過 2 分鐘（可調整），計時器會自動歸零 — 因為你已經在休息了，不必再被提醒一次。
+<p align="center">
+  <a href="https://github.com/djdjdjjjzx/EyeRest/releases/latest">
+    <img alt="下載最新版" src="https://img.shields.io/github/v/release/djdjdjjjzx/EyeRest?label=下載&color=2f8c82">
+  </a>
+  <img alt="授權" src="https://img.shields.io/badge/授權-MIT-blue">
+  <img alt="平台" src="https://img.shields.io/badge/平台-Windows%20%7C%20macOS-lightgrey">
+</p>
 
 ---
 
-## 特色
+## 為什麼要用 EyeRest？
 
-- **20-20-20 護眼法則**：預設 20 分工作 / 20 秒休息，皆可調整
-- **智慧閒置偵測**：離開座位達設定門檻 → 計時器自動重置
+盯螢幕一整天，眼睛很快就會乾澀痠痛。眼科醫師建議的 **20-20-20 法則**：每 20 分鐘，看 20 英尺（約 6 公尺）外的物體至少 20 秒，能有效緩解眼睛疲勞。
+
+但市面上多數提醒工具有兩個煩人的地方：
+
+- **你離開座位去倒杯水回來，它照樣跳出來叫你休息。**
+- **你正在打線上遊戲 / 開會，時間一到就整個畫面被蓋掉。**
+
+EyeRest 解決了這兩件事。
+
+---
+
+## 功能
+
+- **20-20-20 提醒**：預設工作 20 分鐘 / 休息 20 秒，全部可調
+- **智慧閒置偵測**：超過 2 分鐘（可調）沒碰鍵鼠 → 計時器自動歸零，回來不會被立刻打斷
+- **19 分預先警告**：休息前 1 分鐘跳出小視窗，給你三個選擇：
+  - `立刻休息`
+  - `再 3 分鐘`
+  - `Skip`（這次不休息，重新算 20 分）
 - **三種提醒模式**：
-  - 全螢幕遮蔽（最強制）
-  - 半透明覆蓋（較溫和）
-  - 角落通知 + 小視窗（最不打擾）
-- **山林藍綠**的休息畫面，搭配呼吸引導動畫
-- **系統匣（Tray）圖示**：隨時暫停 / 立刻休息 / 跳過下一次
-- **開機自動啟動**（macOS + Windows）
-- **每日統計**：完成週期數、總休息時間、連續天數
+  - 全螢幕 — 最強制
+  - 半透明覆蓋 — 較溫和
+  - 角落通知 — 最不打擾
+- **山林藍綠配色** + 呼吸引導動畫的休息畫面
+- **系統匣圖示**：隨時暫停、跳過、立刻休息、看統計
+- **開機自動啟動**（選用）
+- **每日統計**：完成週期數、總休息秒數
 
 ---
 
-## 給完全沒寫過程式的你：第一次跑起來
+## 下載與安裝
 
-### 1. 安裝 Node.js
+### Windows
 
-到 <https://nodejs.org/> 下載 **LTS 版本**（左邊那顆按鈕），一路「下一步」裝完。
+1. 到 [Releases 頁面](https://github.com/djdjdjjjzx/EyeRest/releases/latest) 下載 `EyeRest Setup X.X.X.exe`
+2. 雙擊安裝
+3. 第一次執行時 Windows SmartScreen 會跳警告（因為 app 沒買付費簽章）→ 點「**更多資訊**」→「**仍要執行**」
+4. 安裝完啟動後，右下角系統匣會出現 EyeRest 眼睛小圖示，右鍵就能進入設定
 
-驗證：開啟 **PowerShell**（Windows）或 **Terminal**（Mac），輸入：
+### macOS
+
+目前需要自行從原始碼打包（見下方 [從原始碼建置](#從原始碼建置)）。正式的 `.dmg` release 會在之後推出。
+
+---
+
+## 使用方式
+
+- **系統匣右鍵** → 立刻休息 / 跳過下一次 / 暫停 / 設定 / 統計 / 結束
+- **設定視窗** → 調整時間、切換提醒模式、開關音效與開機啟動、開關預先警告
+- **預先警告小視窗** → 休息前 1 分鐘跳出，三個按鈕選擇
+- **休息畫面** → 如果有開「允許跳過」，按 **Esc** 可提前結束
+
+---
+
+## 從原始碼建置
+
+需要 [Node.js 18+](https://nodejs.org/)。
 
 ```bash
-node --version
-```
-
-應該會看到類似 `v20.xx.x`。
-
-### 2. 下載這個專案的程式碼
-
-假設你已經在 GitHub 建好 `EyeRest` repo，在你想放程式碼的資料夾打開終端機：
-
-```bash
-git clone https://github.com/<你的GitHub帳號>/EyeRest.git
+git clone https://github.com/djdjdjjjzx/EyeRest.git
 cd EyeRest
-```
-
-（第一次推上 GitHub 的指令在本檔案最後。）
-
-### 3. 安裝依賴套件
-
-```bash
 npm install
-```
 
-這會下載 Electron、auto-launch、electron-store 等套件（約 300MB，放在 `node_modules/`）。
-
-### 4. 跑起來
-
-```bash
+# 開發模式（直接跑）
 npm start
+
+# 跑測試
+npm test
+
+# 打包成安裝檔
+npm run dist:win    # Windows → dist/EyeRest Setup X.X.X.exe
+npm run dist:mac    # macOS   → dist/EyeRest-X.X.X.dmg
 ```
-
-Electron 會啟動。你會在系統匣（Windows 右下角 / Mac 右上角）看到 EyeRest 的圖示。右鍵點它就能設定。
-
-> ⚠️ 第一次跑沒有圖示？那是因為預設沒附圖檔。參見下方「加上圖示與音效」。
-
-### 5. 打包成可執行檔（之後可以雙擊跑）
-
-```bash
-# 打包成 Windows 的 .exe 安裝檔
-npm run dist:win
-
-# 打包成 Mac 的 .dmg
-npm run dist:mac
-```
-
-輸出會放在 `dist/` 資料夾。
-
----
-
-## 給自己的使用小抄
-
-- **右下角 tray 圖示右鍵** → 暫停 / 跳過 / 立刻休息 / 設定 / 統計 / 結束
-- **設定視窗**：拉 slider 調整時間、切換提醒模式、開關音效與開機啟動
-- **統計視窗**：看過去 14 天柱狀圖與每日明細
-- 休息畫面出現時：按 **Esc**（如果有開啟「允許跳過」）可提前結束
-
----
-
-## 加上圖示與音效（可選）
-
-把下列檔案放到對應位置後重新跑：
-
-- `assets/icons/tray.png`（建議 32×32 PNG；Mac 建議用模板圖）
-- `assets/icons/icon.ico`（Windows 安裝檔圖示）
-- `assets/icons/icon.icns`（Mac app 圖示）
-- `assets/sounds/chime.mp3`（休息提示音效）
-
-沒放也能跑，只是 tray 會變成預設方塊、休息開始沒有叮咚聲。
 
 ---
 
@@ -107,49 +98,36 @@ npm run dist:mac
 ```
 EyeRest/
 ├── src/
-│   ├── main/                ← 主程序（背景執行）
-│   │   ├── main.js          ← 入口
-│   │   ├── timer.js         ← 20-20-20 狀態機 + 閒置偵測
-│   │   ├── store.js         ← 設定與統計的持久化
-│   │   ├── tray.js          ← 系統匣圖示與選單
-│   │   ├── windows.js       ← 開啟休息 / 設定 / 統計視窗
-│   │   └── autostart.js     ← 開機自動啟動
+│   ├── main/                主程序（背景常駐）
+│   │   ├── main.js          入口 + IPC
+│   │   ├── timer.js         20-20-20 狀態機 + 閒置偵測
+│   │   ├── store.js         設定與統計的持久化
+│   │   ├── tray.js          系統匣圖示與選單
+│   │   ├── windows.js       休息 / 設定 / 統計 / 預警視窗
+│   │   └── autostart.js     開機自動啟動
 │   ├── preload/
-│   │   └── preload.js       ← 安全 API 橋接
-│   └── renderer/            ← 使用者看到的 UI
-│       ├── break/           ← 休息引導畫面（山林藍綠）
-│       ├── settings/        ← 設定
-│       └── stats/           ← 統計
-├── assets/                  ← 圖示與音效
-├── package.json
-└── README.md
+│   │   └── preload.js       渲染程序與主程序的安全橋接
+│   └── renderer/            使用者介面
+│       ├── break/           休息引導畫面
+│       ├── prewarn/         預先警告小視窗
+│       ├── settings/        設定
+│       └── stats/           統計
+├── assets/icons/            app 圖示與系統匣圖示
+├── test/                    Timer 狀態機單元測試
+└── package.json
 ```
 
 ---
 
-## 第一次推上 GitHub（你已經建好空 repo 的情況）
+## 技術棧
 
-在 `EyeRest/` 資料夾下打開終端機：
-
-```bash
-git init
-git add .
-git commit -m "Initial commit: EyeRest v0.1.0"
-git branch -M main
-git remote add origin https://github.com/<你的GitHub帳號>/EyeRest.git
-git push -u origin main
-```
-
-之後要更新程式碼：
-
-```bash
-git add .
-git commit -m "描述你這次改了什麼"
-git push
-```
+- [Electron](https://www.electronjs.org/) 30
+- [electron-store](https://github.com/sindresorhus/electron-store) — 設定持久化
+- [auto-launch](https://github.com/Teamwork/node-auto-launch) — 開機啟動
+- [electron-builder](https://www.electron.build/) — 打包
 
 ---
 
 ## 授權
 
-MIT License — 見 `LICENSE`。
+[MIT](LICENSE)
