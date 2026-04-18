@@ -1,6 +1,6 @@
 {
   "name": "eyerest",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Cross-platform eye-rest reminder app (20-20-20 rule) with smart idle detection",
   "main": "src/main/main.js",
   "author": "Max",
