@@ -1,7 +1,7 @@
 // timer.js — core 20-20-20 state machine with idle-aware reset + pre-warning
 // + long-break cycling + skip penalty + timed pause.
 //
-// Phases: 'work' | 'break' | 'paused'
+// Phases: 'work' | 'break'; manual, game and idle pauses are independent.
 //
 // Long break cycling:
 //   * Every Nth break is a "long break" (longBreakDurationSec, e.g. 3 min).
@@ -27,8 +27,10 @@ class Timer {
     onIdleReset,
     onPreWarning,
     onPauseChange,
+    now = Date.now,
   }) {
     this.getSettings = getSettings;
+    this.now = now;
     this.getIdleSeconds = getIdleSeconds;
     this.onTick = onTick || (() => {});
     this.onBreakStart = onBreakStart || (() => {});
@@ -41,6 +43,7 @@ class Timer {
     this.workDurationSec = s.workDurationSec;
     this.breakDurationSec = s.breakDurationSec;
     this.idleThresholdSec = s.idleThresholdSec;
+    this.idleResetDelaySec = s.idleResetDelaySec || 300;
     this.preWarningSec = s.preWarningSec;
     this.preWarningEnabled = s.preWarningEnabled;
     this.longBreakEnabled = s.longBreakEnabled !== false;
@@ -61,6 +64,9 @@ class Timer {
     this.nextBreakIsLong = false;
     this.breaksTaken = 0;
     this.idleResetArmed = true;
+    this.idlePaused = false;
+    this.idleReset = false;
+    this._suspendedAt = null;
     this.preWarningFired = false;
     this.lastBreakDurationSec = 0;
     this.currentBreakDurationSec = this.breakDurationSec;
@@ -73,6 +79,7 @@ class Timer {
     this.workDurationSec = s.workDurationSec;
     this.breakDurationSec = s.breakDurationSec;
     this.idleThresholdSec = s.idleThresholdSec;
+    this.idleResetDelaySec = s.idleResetDelaySec || 300;
     this.preWarningSec = s.preWarningSec;
     this.preWarningEnabled = s.preWarningEnabled;
     this.longBreakEnabled = s.longBreakEnabled !== false;
@@ -105,14 +112,45 @@ class Timer {
     const wasGaming = !!this.gamePauseName;
     this.gamePauseName = name;
     this.gameDetectionError = error;
+    if (name) this.idlePaused = false;
     // Ignore controller-only idle time until keyboard/mouse activity resumes.
     if (wasGaming && !name) this.ignoreGameIdle = true;
     if (name && this.phase === 'work') this.preWarningFired = false;
     this.onTick(this.getState());
   }
 
+  suspend() {
+    if (this._suspendedAt !== null) return;
+    this._suspendedAt = this.now();
+    this._idleAtSuspend = Math.max(0, Number(this.getIdleSeconds()) || 0);
+    this.preWarningFired = false;
+    this.onTick(this.getState());
+  }
+
+  resume() {
+    if (this._suspendedAt === null) return;
+    const awaySec = this._idleAtSuspend + Math.max(0, this.now() - this._suspendedAt) / 1000;
+    this._suspendedAt = null;
+    if (this.phase === 'work' && !this.gamePauseName && !this.ignoreGameIdle) {
+      if (awaySec >= this.idleThresholdSec) this.idlePaused = true;
+      if (awaySec >= this.idleThresholdSec + this.idleResetDelaySec) this._resetForIdle();
+    }
+    this.onTick(this.getState());
+  }
+
+  _resetForIdle() {
+    if (!this.idleResetArmed) return;
+    this.workElapsedSec = 0;
+    this.workExtensionSec = 0;
+    this.preWarningFired = false;
+    this.idleResetArmed = false;
+    this.idleReset = true;
+    this.onIdleReset(this.getState());
+  }
+
   togglePause() {
     this.paused = !this.paused;
+    if (this.paused && this.phase === 'work') this.preWarningFired = false;
     this._clearPauseTimeout();
     this.onPauseChange(this.getState());
     this.onTick(this.getState());
@@ -123,6 +161,7 @@ class Timer {
     const mins = Math.max(1, Math.floor(Number(minutes) || 0));
     this._clearPauseTimeout();
     this.paused = true;
+    if (this.phase === 'work') this.preWarningFired = false;
     this.pausedUntilMs = Date.now() + mins * 60 * 1000;
     this._pauseTimeout = setTimeout(() => {
       this._pauseTimeout = null;
@@ -181,6 +220,9 @@ class Timer {
       gamePauseName: this.phase === 'work' ? this.gamePauseName : '',
       gameDetectionError: this.gameDetectionError,
       paused: this.paused,
+      idlePaused: this.phase === 'work' && !this.gamePauseName && this.idlePaused,
+      idleReset: this.idleReset,
+      suspended: this._suspendedAt !== null,
       pausedUntilMs: this.pausedUntilMs,
       workElapsedSec: this.workElapsedSec,
       breakElapsedSec: this.breakElapsedSec,
@@ -189,6 +231,7 @@ class Timer {
       normalBreakDurationSec: this.breakDurationSec,
       longBreakDurationSec: this.longBreakDurationSec,
       idleThresholdSec: this.idleThresholdSec,
+      idleResetDelaySec: this.idleResetDelaySec,
       preWarningSec: this.preWarningSec,
       preWarningEnabled: this.preWarningEnabled,
       preWarningFired: this.preWarningFired,
@@ -215,13 +258,14 @@ class Timer {
   }
 
   _tick() {
-    if (this.paused) {
+    if (this._suspendedAt !== null) {
       this.onTick(this.getState());
       return;
     }
 
     if (this.phase === 'work') {
       if (this.gamePauseName) {
+        this.idlePaused = false;
         this.onTick(this.getState());
         return;
       }
@@ -229,18 +273,22 @@ class Timer {
 
       if (idleSec < this.idleThresholdSec) this.ignoreGameIdle = false;
       if (idleSec >= this.idleThresholdSec && !this.ignoreGameIdle) {
-        if ((this.workElapsedSec > 0 || this.workExtensionSec > 0) && this.idleResetArmed) {
-          this.workElapsedSec = 0;
-          this.workExtensionSec = 0;
+        if (!this.idlePaused) {
+          this.idlePaused = true;
           this.preWarningFired = false;
-          this.idleResetArmed = false;
-          this.onIdleReset(this.getState());
         }
+        if (idleSec >= this.idleThresholdSec + this.idleResetDelaySec) this._resetForIdle();
         this.onTick(this.getState());
         return;
       }
 
       this.idleResetArmed = true;
+      this.idlePaused = false;
+      this.idleReset = false;
+      if (this.paused) {
+        this.onTick(this.getState());
+        return;
+      }
       this.workElapsedSec += 1;
 
       if (
@@ -272,6 +320,10 @@ class Timer {
     }
 
     if (this.phase === 'break') {
+      if (this.paused) {
+        this.onTick(this.getState());
+        return;
+      }
       this.breakElapsedSec += 1;
       if (this.breakElapsedSec >= this.currentBreakDurationSec) {
         this._endBreak(true);
@@ -289,6 +341,8 @@ class Timer {
       : this.breakDurationSec;
     this.nextBreakIsLong = false;
     this.phase = 'break';
+    this.idlePaused = false;
+    this.idleReset = false;
     this.breakElapsedSec = 0;
     this.breaksTaken += 1;
     this.onBreakStart(this.getState());
@@ -301,6 +355,8 @@ class Timer {
     this.workExtensionSec = 0;
     this.breakElapsedSec = 0;
     this.idleResetArmed = true;
+    this.idlePaused = false;
+    this.idleReset = false;
     this.preWarningFired = false;
     this.currentBreakIsLong = false;
     this.currentBreakDurationSec = this.breakDurationSec;

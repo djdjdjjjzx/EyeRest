@@ -165,8 +165,9 @@ function showPreWarning(state) {
     path.join(__dirname, '..', 'renderer', 'prewarn', 'index.html'),
     { query: { remainSec: String(remainSec) } },
   );
-  preWarnWindow.once('ready-to-show', () => preWarnWindow.show());
-  preWarnWindow.on('closed', () => { preWarnWindow = null; });
+  const win = preWarnWindow;
+  win.once('ready-to-show', () => { if (!win.isDestroyed()) win.show(); });
+  win.on('closed', () => { if (preWarnWindow === win) preWarnWindow = null; });
 }
 
 function closePreWarning() {

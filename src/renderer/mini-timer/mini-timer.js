@@ -7,8 +7,9 @@ function paint(state) {
   const seconds = Math.max(0, Math.ceil(resting
     ? state.breakDurationSec - state.breakElapsedSec
     : state.workDurationSec - state.workElapsedSec));
-  const paused = state.paused || !!state.gamePauseName;
+  const paused = state.paused || !!state.gamePauseName || state.idlePaused;
   label.textContent = state.paused ? '已暫停' : state.gamePauseName ? '遊戲中 · 暫停'
+    : state.idlePaused ? (state.idleReset ? '已重設 · 等待回來' : '閒置暫停')
     : resting ? (state.isLongBreak ? '長休息中' : '休息中') : '下次休息';
   remaining.textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
   pill.className = `pill${paused ? ' paused' : resting ? ' resting' : seconds <= 60 ? ' soon' : ''}`;

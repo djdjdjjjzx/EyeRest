@@ -11,6 +11,7 @@
     "dev": "electron . --dev",
     "test": "node test/timer.test.js",
     "test:mini": "electron test/mini-timer.test.js",
+    "test:idle": "electron test/idle-ui.test.js",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "dist:win": "electron-builder --win",

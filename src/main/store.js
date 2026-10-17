@@ -6,6 +6,7 @@ const DEFAULT_SETTINGS = {
   workDurationSec: 20 * 60,   // 20 minutes
   breakDurationSec: 20,       // 20 seconds (normal break)
   idleThresholdSec: 2 * 60,   // 2 minutes
+  idleResetDelaySec: 5 * 60, // Additional idle time after pausing before reset
   reminderMode: 'fullscreen', // 'fullscreen' | 'overlay' | 'notification'
   soundEnabled: true,
   autoLaunch: false,
@@ -59,6 +60,7 @@ function updateSettings(partial) {
   next.workDurationSec = clamp(next.workDurationSec, 60, 60 * 60 * 4);
   next.breakDurationSec = clamp(next.breakDurationSec, 5, 60 * 30);
   next.idleThresholdSec = clamp(next.idleThresholdSec, 30, 60 * 60);
+  next.idleResetDelaySec = clamp(next.idleResetDelaySec, 60, 60 * 60);
   next.snoozeMinutes = clamp(next.snoozeMinutes, 1, 60);
   next.preWarningSec = clamp(next.preWarningSec, 10, 600);
   next.longBreakDurationSec = clamp(next.longBreakDurationSec, 30, 60 * 30);

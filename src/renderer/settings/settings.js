@@ -47,6 +47,8 @@ function runInit() {
   const workMin           = $('workMin');
   const breakSec          = $('breakSec');
   const idleMin           = $('idleMin');
+  const idleResetMin      = $('idleResetMin');
+  const idleResetOut      = $('idleResetOut');
   const workOut           = $('workOut');
   const breakOut          = $('breakOut');
   const idleOut           = $('idleOut');
@@ -94,6 +96,8 @@ function runInit() {
       if (workMin)  workMin.value  = Math.round(s.workDurationSec / 60);
       if (breakSec) breakSec.value = s.breakDurationSec;
       if (idleMin)  idleMin.value  = Math.round(s.idleThresholdSec / 60);
+      if (idleResetMin) idleResetMin.value = Math.round(s.idleResetDelaySec / 60);
+      text(idleResetOut, `${idleResetMin ? idleResetMin.value : 5} 分`);
       text(workOut,  `${workMin ? workMin.value : ''} 分`);
       text(breakOut, formatSec(breakSec ? breakSec.value : 0));
       text(idleOut,  `${idleMin ? idleMin.value : ''} 分`);
@@ -136,6 +140,11 @@ function runInit() {
       } else if (state.gamePauseName) {
         statusEl.textContent = `遊戲中，倒數已暫停 · ${state.gamePauseName}`;
         text(pauseToggleBtn, '暫停');
+      } else if (state.idlePaused) {
+        const r = Math.max(0, state.workDurationSec - state.workElapsedSec);
+        statusEl.textContent = state.idleReset ? '閒置已重設，等待回來後倒數'
+          : `閒置暫停 · 保留 ${formatSec(r)}`;
+        text(pauseToggleBtn, '暫停');
       } else if (state.phase === 'break') {
         const r = Math.max(0, state.breakDurationSec - state.breakElapsedSec);
         statusEl.textContent = `休息中 · 還剩 ${r} 秒`;
@@ -172,6 +181,10 @@ function runInit() {
   bindSlider(idleMin, idleOut, {
     label: (v) => `${v} 分`,
     save:  (v) => ({ idleThresholdSec: Number(v) * 60 }),
+  });
+  bindSlider(idleResetMin, idleResetOut, {
+    label: (v) => `${v} 分`,
+    save: (v) => ({ idleResetDelaySec: Number(v) * 60 }),
   });
   bindSlider(preWarnSec, preWarnOut, {
     label: (v) => formatSec(v),

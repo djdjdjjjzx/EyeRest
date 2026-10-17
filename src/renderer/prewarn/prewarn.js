@@ -7,10 +7,6 @@
 
 (() => {
   const $ = (id) => document.getElementById(id);
-  const params = new URLSearchParams(location.search);
-  const remainSec = Math.max(0, parseInt(params.get('remainSec') || '60', 10));
-
-  let remaining = remainSec;
   const $cd = $('countdown');
 
   function fmt(sec) {
@@ -19,19 +15,18 @@
     return `${m}:${String(s).padStart(2, '0')}`;
   }
 
-  function render() {
-    if ($cd) $cd.textContent = fmt(Math.max(0, remaining));
+  function render(state) {
+    if (state.phase !== 'work' || state.paused || state.gamePauseName || state.idlePaused || state.suspended) {
+      window.eyerest.closePreWarn();
+      return;
+    }
+    if ($cd) $cd.textContent = fmt(Math.max(0, state.workDurationSec - state.workElapsedSec));
   }
 
-  render();
-  const iv = setInterval(() => {
-    remaining -= 1;
-    render();
-    if (remaining <= 0) {
-      clearInterval(iv);
-      // Main process will close this window when the break starts.
-    }
-  }, 1000);
+  window.eyerest.onTick(render);
+  window.eyerest.onState(render);
+  window.eyerest.onIdleReset(() => window.eyerest.closePreWarn());
+  window.eyerest.getTimerState().then(render).catch(console.error);
 
   const onClick = (id, fn) => {
     const el = $(id);

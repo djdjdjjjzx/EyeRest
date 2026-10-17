@@ -61,6 +61,7 @@ function startApp() {
     getSettings: () => store.getSettings(),
     getIdleSeconds: () => powerMonitor.getSystemIdleTime(),
     onTick: (state) => {
+      if (state.idlePaused || state.suspended || state.paused) windows.closePreWarning();
       setTrayTooltip(formatTooltip(state));
       broadcast('eyerest:tick', state);
     },
@@ -75,6 +76,7 @@ function startApp() {
       broadcast('eyerest:break-end', { state, completed });
     },
     onIdleReset: (state) => {
+      windows.closePreWarning();
       broadcast('eyerest:idle-reset', state);
     },
     onPreWarning: (state) => {
@@ -82,6 +84,7 @@ function startApp() {
       broadcast('eyerest:pre-warning', state);
     },
     onPauseChange: (state) => {
+      if (state.paused) windows.closePreWarning();
       updateTrayMenu({ paused: state.paused, pausedUntilMs: state.pausedUntilMs });
       broadcast('eyerest:state', state);
     },
@@ -93,6 +96,8 @@ function startApp() {
   });
   gameMonitor.configure(store.getSettings());
   timer.start();
+  powerMonitor.on('suspend', () => timer.suspend());
+  powerMonitor.on('resume', () => timer.resume());
 
   applyAutoLaunch(store.getSettings().autoLaunch).catch((err) => {
     console.error('Auto-launch error:', err);
@@ -112,6 +117,9 @@ function formatTooltip(state) {
     return 'EyeRest — 已暫停';
   }
   if (state.gamePauseName) return `EyeRest — 遊戲中，倒數已暫停（${state.gamePauseName}）`;
+  if (state.idlePaused) return state.idleReset
+    ? 'EyeRest — 閒置已重設，等待回來後倒數'
+    : 'EyeRest — 閒置暫停，保留剩餘時間';
   if (state.phase === 'break') {
     const remain = Math.max(0, state.breakDurationSec - state.breakElapsedSec);
     return `EyeRest — 休息中 ${remain}s${state.isLongBreak ? '（長休息）' : ''}`;

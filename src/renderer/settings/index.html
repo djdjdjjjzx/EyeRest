@@ -35,13 +35,21 @@
 
       <label class="row">
         <div class="row-head">
-          <span>離開座位時間歸零</span>
+          <span>閒置多久後暫停</span>
           <span class="value" id="idleOut">2 分</span>
         </div>
         <input type="range" id="idleMin" min="1" max="30" step="1" value="2" />
         <div class="hint">
-          超過這段時間沒動滑鼠/鍵盤 → 視為你已經在休息、計時器歸零重算
+          沒動滑鼠／鍵盤達這段時間後，暫停倒數並保留剩餘時間；回來後繼續
         </div>
+      </label>
+      <label class="row">
+        <div class="row-head">
+          <span>暫停後再閒置多久重設</span>
+          <span class="value" id="idleResetOut">5 分</span>
+        </div>
+        <input type="range" id="idleResetMin" min="1" max="60" step="1" value="5" />
+        <div class="hint">從閒置暫停門檻起，再經過這段時間才恢復完整工作時間，回來後重新倒數</div>
       </label>
     </section>
 

@@ -23,6 +23,8 @@ function makeTimer({
   workSec = 10,
   breakSec = 3,
   idleSec = 5,
+  idleResetDelaySec = 1,
+  now = Date.now,
   preWarningEnabled = true,
   preWarningSec = 0,
   longBreakEnabled = false,
@@ -36,6 +38,7 @@ function makeTimer({
     workDurationSec: workSec,
     breakDurationSec: breakSec,
     idleThresholdSec: idleSec,
+    idleResetDelaySec,
     preWarningEnabled,
     preWarningSec,
     longBreakEnabled,
@@ -44,6 +47,7 @@ function makeTimer({
     forceLongBreakAfterSkip,
   };
   const timer = new Timer({
+    now,
     getSettings: () => settings,
     getIdleSeconds: () => idle,
     onTick: (s) => events.push({ type: 'tick', phase: s.phase, work: s.workElapsedSec, brk: s.breakElapsedSec }),
@@ -424,6 +428,69 @@ console.log('Test 25: extension preserves pauses and immediate break');
   assertEq('extension preserves game pause', timer.workElapsedSec, 0);
   timer.forceBreak();
   assertEq('immediate break works while gaming', timer.phase, 'break');
+}
+
+console.log('Test 26: separate idle pause/reset thresholds and exact boundaries');
+{
+  const { timer, step, setIdle, events } = makeTimer({ workSec: 1200, idleSec: 300, idleResetDelaySec: 300 });
+  step(400); timer.extendWork(1);
+  setIdle(299); step();
+  assertEq('before pause threshold still running', timer.workElapsedSec, 401);
+  setIdle(300); step(5);
+  assertEq('pause threshold preserves elapsed', timer.workElapsedSec, 401);
+  assertEq('pause preserves extension', timer.getState().workDurationSec, 1260);
+  assertEq('idle state is exposed separately', [timer.getState().idlePaused, timer.paused], [true, false]);
+  setIdle(599); step();
+  assertEq('before reset threshold keeps progress', timer.workElapsedSec, 401);
+  setIdle(600); step(5);
+  assertEq('reset restores configured duration', [timer.workElapsedSec, timer.getState().workDurationSec], [0, 1200]);
+  assertEq('reset waits for input', [timer.getState().idlePaused, timer.getState().idleReset], [true, true]);
+  assertEq('only one reset per absence', events.filter(e => e.type === 'idle-reset').length, 1);
+  setIdle(0); step();
+  assertEq('return resumes new cycle', [timer.workElapsedSec, timer.getState().idlePaused, timer.getState().idleReset], [1, false, false]);
+}
+console.log('Test 27: short idle preserves progress and re-arms warning on return');
+{
+  const { timer, step, setIdle, events } = makeTimer({ workSec: 20, idleSec: 5, idleResetDelaySec: 10, preWarningSec: 5 });
+  step(15); setIdle(5); step(10);
+  assertEq('no break while idle paused', timer.phase, 'work');
+  assertEq('short idle does not reset', timer.workElapsedSec, 15);
+  setIdle(0); step();
+  assertEq('short idle resumes preserved progress', timer.workElapsedSec, 16);
+  assertEq('warning is shown again after returning', events.filter(e => e.type === 'pre-warning').length, 2);
+  assertEq('no reset during short idle', events.some(e => e.type === 'idle-reset'), false);
+}
+console.log('Test 28: manual and idle pauses stay independent');
+{
+  const { timer, step, setIdle } = makeTimer({ workSec: 100, idleSec: 5, idleResetDelaySec: 10 });
+  step(10); timer.togglePause(); setIdle(5); step();
+  timer.togglePause(); step();
+  assertEq('manual resume cannot bypass idle pause', timer.workElapsedSec, 10);
+  timer.togglePause(); setIdle(0); step();
+  assertEq('input does not release manual pause', [timer.paused, timer.workElapsedSec, timer.getState().idlePaused], [true, 10, false]);
+  setIdle(15); step(); setIdle(0); step();
+  assertEq('long idle resets while preserving manual pause', [timer.paused, timer.workElapsedSec], [true, 0]);
+}
+console.log('Test 29: sleep duration is counted even after fresh input on wake');
+{
+  let now = 0;
+  const { timer, step, setIdle, events } = makeTimer({ workSec: 1200, idleSec: 300, idleResetDelaySec: 300, now: () => now });
+  step(100); setIdle(200); timer.suspend();
+  now = 400000; setIdle(0); step(10);
+  assertEq('ticks cannot advance during sleep', timer.workElapsedSec, 100);
+  timer.resume(); timer.resume();
+  assertEq('pre-sleep idle plus sleep reaches reset threshold', timer.workElapsedSec, 0);
+  assertEq('duplicate resume does not reset twice', events.filter(e => e.type === 'idle-reset').length, 1);
+  step(); assertEq('wake input starts new cycle', timer.workElapsedSec, 1);
+}
+console.log('Test 30: short sleep and game pause preserve progress');
+{
+  let now = 0;
+  const { timer, step } = makeTimer({ workSec: 1200, idleSec: 300, idleResetDelaySec: 300, now: () => now });
+  step(100); timer.suspend(); now += 300000; timer.resume(); step();
+  assertEq('short sleep preserves progress', timer.workElapsedSec, 101);
+  timer.setGamePause('game.exe'); timer.suspend(); now += 900000; timer.resume(); step();
+  assertEq('sleep does not override game pause', timer.workElapsedSec, 101);
 }
 
 // ---------- Summary ----------
