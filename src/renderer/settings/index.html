@@ -112,6 +112,18 @@
     </section>
 
     <section class="card">
+      <h3>遊戲期間暫停</h3>
+      <label class="toggle">
+        <input type="checkbox" id="gamePauseEnabled" />
+        <span>遊戲期間自動暫停倒數（Windows）</span>
+      </label>
+      <div class="hint">清單內的遊戲在前景時暫停，切走後接續剩餘時間。請選遊戲本體 .exe，勿選 Steam 等啟動器；已開始的休息仍會繼續。</div>
+      <ul id="gameList" class="game-list"></ul>
+      <button class="btn" id="addGame">加入遊戲執行檔…</button>
+      <div class="hint" id="gameError" role="status"></div>
+    </section>
+
+    <section class="card">
       <h3>系統</h3>
       <label class="toggle">
         <input type="checkbox" id="autoLaunch" />

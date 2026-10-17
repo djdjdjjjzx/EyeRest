@@ -1,7 +1,7 @@
 // EyeRest — main process entry
 // Handles app lifecycle, wires together timer / tray / windows / settings.
 
-const { app, BrowserWindow, ipcMain, powerMonitor, nativeImage, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, powerMonitor, nativeImage, screen, dialog } = require('electron');
 const path = require('path');
 
 const store = require('./store');
@@ -17,6 +17,8 @@ if (!gotLock) {
   process.exit(0);
 }
 
+const { GameMonitor } = require('./game-monitor');
+let gameMonitor;
 let timer;
 
 function broadcast(channel, payload) {
@@ -84,6 +86,11 @@ function startApp() {
     },
   });
 
+  gameMonitor = new GameMonitor((name, error) => {
+    timer.setGamePause(name, error);
+    if (name && timer.phase === 'work') windows.closePreWarning();
+  });
+  gameMonitor.configure(store.getSettings());
   timer.start();
 
   applyAutoLaunch(store.getSettings().autoLaunch).catch((err) => {
@@ -102,6 +109,7 @@ function formatTooltip(state) {
     }
     return 'EyeRest — 已暫停';
   }
+  if (state.gamePauseName) return `EyeRest — 遊戲中，倒數已暫停（${state.gamePauseName}）`;
   if (state.phase === 'break') {
     const remain = Math.max(0, state.breakDurationSec - state.breakElapsedSec);
     return `EyeRest — 休息中 ${remain}s${state.isLongBreak ? '（長休息）' : ''}`;
@@ -114,13 +122,27 @@ function formatTooltip(state) {
 }
 
 function registerIpc() {
-  ipcMain.handle('settings:get', () => store.getSettings());
+  ipcMain.handle('games:pick', async (event) => {
+    if (process.platform !== 'win32') return [];
+    const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender), {
+      title: '選擇遊戲執行檔（請選實際遊戲，不是啟動器）',
+      properties: ['openFile', 'multiSelections'],
+      filters: [{ name: '遊戲執行檔', extensions: ['exe'] }],
+    });
+    if (result.canceled) return [];
+    const updated = store.updateSettings({ gamePaths: [...store.getSettings().gamePaths, ...result.filePaths] });
+    gameMonitor.configure(updated);
+    broadcast('eyerest:settings', updated);
+    return updated.gamePaths;
+  });
+  ipcMain.handle('settings:get' , () => store.getSettings());
   ipcMain.handle('settings:set', async (_e, partial) => {
     const updated = store.updateSettings(partial);
     if ('autoLaunch' in partial) {
       await applyAutoLaunch(updated.autoLaunch).catch(console.error);
     }
     timer.applySettings(updated);
+    gameMonitor.configure(updated);
     broadcast('eyerest:settings', updated);
     return updated;
   });
@@ -181,5 +203,7 @@ app.on('window-all-closed', (e) => {
 });
 
 app.on('before-quit', () => {
+  gameMonitor?.stop();
+  timer?.stop();
   app.isQuiting = true;
 });

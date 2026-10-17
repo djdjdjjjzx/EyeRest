@@ -51,6 +51,8 @@ class Timer {
     this.phase = 'work';
     this.workElapsedSec = 0;
     this.breakElapsedSec = 0;
+    this.gamePauseName = '';
+    this.gameDetectionError = false;
     this.paused = false;
     this.pausedUntilMs = null;
     this._pauseTimeout = null;
@@ -95,6 +97,17 @@ class Timer {
       this._pauseTimeout = null;
     }
     this.pausedUntilMs = null;
+  }
+
+  setGamePause(name, error = false) {
+    if (this.gamePauseName === name && this.gameDetectionError === error) return;
+    const wasGaming = !!this.gamePauseName;
+    this.gamePauseName = name;
+    this.gameDetectionError = error;
+    // Ignore controller-only idle time until keyboard/mouse activity resumes.
+    if (wasGaming && !name) this.ignoreGameIdle = true;
+    if (name && this.phase === 'work') this.preWarningFired = false;
+    this.onTick(this.getState());
   }
 
   togglePause() {
@@ -156,6 +169,8 @@ class Timer {
       : this._predictNextBreakDuration();
     return {
       phase: this.phase,
+      gamePauseName: this.phase === 'work' ? this.gamePauseName : '',
+      gameDetectionError: this.gameDetectionError,
       paused: this.paused,
       pausedUntilMs: this.pausedUntilMs,
       workElapsedSec: this.workElapsedSec,
@@ -197,9 +212,14 @@ class Timer {
     }
 
     if (this.phase === 'work') {
+      if (this.gamePauseName) {
+        this.onTick(this.getState());
+        return;
+      }
       const idleSec = Math.max(0, Math.floor(this.getIdleSeconds()));
 
-      if (idleSec >= this.idleThresholdSec) {
+      if (idleSec < this.idleThresholdSec) this.ignoreGameIdle = false;
+      if (idleSec >= this.idleThresholdSec && !this.ignoreGameIdle) {
         if (this.workElapsedSec > 0 && this.idleResetArmed) {
           this.workElapsedSec = 0;
           this.preWarningFired = false;

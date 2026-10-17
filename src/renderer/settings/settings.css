@@ -183,3 +183,7 @@ input[type="range"]::-webkit-slider-thumb {
   color: var(--text-soft);
   font-size: 12px;
 }
+
+.game-list { padding: 0; list-style: none; }
+.game-list li { display: flex; align-items: center; gap: 12px; margin: 8px 0; }
+.game-list span { flex: 1; overflow-wrap: anywhere; font-size: 12px; }

@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('eyerest', {
   // settings
   getSettings: () => ipcRenderer.invoke('settings:get'),
   setSettings: (partial) => ipcRenderer.invoke('settings:set', partial),
+  pickGames: () => ipcRenderer.invoke('games:pick'),
+  gamePauseSupported: process.platform === 'win32',
   // stats
   getStats: () => ipcRenderer.invoke('stats:get'),
   resetStats: () => ipcRenderer.invoke('stats:reset'),

@@ -16,6 +16,34 @@
 function runInit() {
   const $ = (id) => document.getElementById(id);
 
+  const gameEnabled = $('gamePauseEnabled');
+  const gameList = $('gameList');
+  const addGame = $('addGame');
+  const gameError = $('gameError');
+  gameEnabled.disabled = addGame.disabled = !window.eyerest.gamePauseSupported;
+  gameEnabled.addEventListener('change', () => save({ gamePauseEnabled: gameEnabled.checked }));
+  addGame.addEventListener('click', async () => {
+    try { await window.eyerest.pickGames(); await loadSettings(); }
+    catch (err) { gameError.textContent = '無法加入遊戲：' + err.message; }
+  });
+  function paintGames(paths) {
+    gameList.replaceChildren();
+    for (const game of paths) {
+      const row = document.createElement('li');
+      const label = document.createElement('span');
+      label.textContent = game;
+      const remove = document.createElement('button');
+      remove.className = 'btn';
+      remove.textContent = '移除';
+      remove.addEventListener('click', async () => {
+        const current = await window.eyerest.getSettings();
+        await save({ gamePaths: current.gamePaths.filter(p => p !== game) });
+        await loadSettings();
+      });
+      row.append(label, remove);
+      gameList.append(row);
+    }
+  }
   const workMin           = $('workMin');
   const breakSec          = $('breakSec');
   const idleMin           = $('idleMin');
@@ -60,6 +88,8 @@ function runInit() {
   async function loadSettings() {
     try {
       const s = await window.eyerest.getSettings();
+      gameEnabled.checked = !!s.gamePauseEnabled;
+      paintGames(s.gamePaths || []);
       if (workMin)  workMin.value  = Math.round(s.workDurationSec / 60);
       if (breakSec) breakSec.value = s.breakDurationSec;
       if (idleMin)  idleMin.value  = Math.round(s.idleThresholdSec / 60);
@@ -97,9 +127,13 @@ function runInit() {
     try {
       const state = await window.eyerest.getTimerState();
       if (!state) { statusEl.textContent = '尚未連線'; return; }
+      gameError.textContent = state.gameDetectionError ? '遊戲偵測無法啟動，倒數照常進行。請重新勾選以重試。' : '';
       if (state.paused) {
         statusEl.textContent = '已暫停';
         text(pauseToggleBtn, '繼續');
+      } else if (state.gamePauseName) {
+        statusEl.textContent = `遊戲中，倒數已暫停 · ${state.gamePauseName}`;
+        text(pauseToggleBtn, '暫停');
       } else if (state.phase === 'break') {
         const r = Math.max(0, state.breakDurationSec - state.breakElapsedSec);
         statusEl.textContent = `休息中 · 還剩 ${r} 秒`;

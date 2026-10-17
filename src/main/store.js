@@ -9,6 +9,8 @@ const DEFAULT_SETTINGS = {
   reminderMode: 'fullscreen', // 'fullscreen' | 'overlay' | 'notification'
   soundEnabled: true,
   autoLaunch: false,
+  gamePauseEnabled: false,
+  gamePaths: [],
   allowSkip: true,
   allowSnooze: true,
   snoozeMinutes: 5,
@@ -59,6 +61,9 @@ function updateSettings(partial) {
   next.preWarningSec = clamp(next.preWarningSec, 10, 600);
   next.longBreakDurationSec = clamp(next.longBreakDurationSec, 30, 60 * 30);
   next.longBreakEvery = clamp(next.longBreakEvery, 2, 20);
+  next.gamePauseEnabled = next.gamePauseEnabled === true;
+  const { normalizeGamePath } = require('./game-monitor');
+  next.gamePaths = [...new Set((Array.isArray(next.gamePaths) ? next.gamePaths : []).map(normalizeGamePath).filter(Boolean))];
   store().set('settings', next);
   return next;
 }

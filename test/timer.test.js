@@ -344,6 +344,45 @@ console.log('Test 19: togglePause cancels pauseFor timeout');
   }
 }
 
+console.log('Test 20: game pause preserves progress, suppresses warnings and idle resets');
+{
+  const { timer, step, setIdle, events } = makeTimer({ workSec: 10, preWarningSec: 3 });
+  step(6);
+  timer.setGamePause('game.exe');
+  setIdle(100);
+  step(20);
+  assertEq('game preserves elapsed time despite idle', timer.workElapsedSec, 6);
+  assertEq('no warning while gaming', events.some(e => e.type === 'pre-warning'), false);
+  timer.setGamePause(''); step();
+  assertEq('resume preserves controller-only progress', timer.workElapsedSec, 7);
+  setIdle(0); step(); setIdle(100); step();
+  assertEq('idle detection returns after input', timer.workElapsedSec, 0);
+}
+console.log('Test 21: manual and game pauses are independent');
+{
+  const { timer, step } = makeTimer();
+  step(2); timer.togglePause(); timer.setGamePause('game.exe');
+  timer.setGamePause(''); step(3);
+  assertEq('leaving game keeps manual pause', timer.paused, true);
+  assertEq('manual pause preserves time', timer.workElapsedSec, 2);
+  timer.setGamePause('game.exe'); timer.togglePause(); step(3);
+  assertEq('game still pauses after manual resume', timer.workElapsedSec, 2);
+  timer.setGamePause(''); step();
+  assertEq('resumes when both released', timer.workElapsedSec, 3);
+}
+console.log('Test 22: ongoing breaks continue during gaming');
+{
+  const { timer, step } = makeTimer({ workSec: 2, breakSec: 2 });
+  step(2); timer.setGamePause('game.exe'); step(2);
+  assertEq('break finishes', timer.phase, 'work');
+  step(5);
+  assertEq('next work period stays paused', timer.workElapsedSec, 0);
+}
+const { normalizeGamePath } = require('../src/main/game-monitor');
+assertEq('case insensitive full paths', normalizeGamePath('C:/Games/Test.EXE'), 'c:\\games\\test.exe');
+assertEq('relative paths rejected', normalizeGamePath('game.exe'), '');
+assertEq('non executables rejected', normalizeGamePath('C:/game.txt'), '');
+
 // ---------- Summary ----------
 console.log('');
 if (failures === 0) {
