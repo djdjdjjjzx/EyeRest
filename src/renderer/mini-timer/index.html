@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'">
+  <title>EyeRest 倒數</title>
+  <link rel="stylesheet" href="mini-timer.css">
+</head>
+<body>
+  <div class="pill" id="pill">
+    <span class="handle" title="拖曳移動浮窗" aria-label="拖曳移動浮窗">⠿</span>
+    <button id="timer" title="點擊調整下次休息" aria-haspopup="menu">
+      <span id="label">下次休息</span>
+      <span class="value"><span id="remaining">--:--</span><span class="arrow">⌄</span></span>
+    </button>
+  </div>
+  <script src="mini-timer.js"></script>
+</body>
+</html>

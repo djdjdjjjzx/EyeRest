@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('eyerest', {
   resetStats: () => ipcRenderer.invoke('stats:reset'),
   // timer controls
   getTimerState: () => ipcRenderer.invoke('timer:state'),
+  openMiniTimerMenu: () => ipcRenderer.invoke('mini-timer:menu'),
   skipBreak: () => ipcRenderer.invoke('timer:skip-break'),
   snooze: (minutes) => ipcRenderer.invoke('timer:snooze', minutes),
   pauseToggle: () => ipcRenderer.invoke('timer:pause-toggle'),

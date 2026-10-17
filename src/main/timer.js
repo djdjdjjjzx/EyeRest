@@ -50,6 +50,7 @@ class Timer {
 
     this.phase = 'work';
     this.workElapsedSec = 0;
+    this.workExtensionSec = 0;
     this.breakElapsedSec = 0;
     this.gamePauseName = '';
     this.gameDetectionError = false;
@@ -155,7 +156,15 @@ class Timer {
     if (this.phase !== 'work') return;
     const wantRemain = Math.max(0, Math.floor(minutes * 60));
     this.workElapsedSec = Math.max(0, this.workDurationSec - wantRemain);
+    this.workExtensionSec = 0;
     this.preWarningFired = false;
+  }
+
+  extendWork(minutes) {
+    if (this.phase !== 'work' || ![1, 3].includes(minutes)) return;
+    this.workExtensionSec += minutes * 60;
+    this.preWarningFired = false;
+    this.onTick(this.getState());
   }
 
   forceBreak() {
@@ -175,7 +184,7 @@ class Timer {
       pausedUntilMs: this.pausedUntilMs,
       workElapsedSec: this.workElapsedSec,
       breakElapsedSec: this.breakElapsedSec,
-      workDurationSec: this.workDurationSec,
+      workDurationSec: this.workDurationSec + this.workExtensionSec,
       breakDurationSec: activeBreakDuration,
       normalBreakDurationSec: this.breakDurationSec,
       longBreakDurationSec: this.longBreakDurationSec,
@@ -220,8 +229,9 @@ class Timer {
 
       if (idleSec < this.idleThresholdSec) this.ignoreGameIdle = false;
       if (idleSec >= this.idleThresholdSec && !this.ignoreGameIdle) {
-        if (this.workElapsedSec > 0 && this.idleResetArmed) {
+        if ((this.workElapsedSec > 0 || this.workExtensionSec > 0) && this.idleResetArmed) {
           this.workElapsedSec = 0;
+          this.workExtensionSec = 0;
           this.preWarningFired = false;
           this.idleResetArmed = false;
           this.onIdleReset(this.getState());
@@ -237,17 +247,18 @@ class Timer {
         this.preWarningEnabled &&
         !this.preWarningFired &&
         this.preWarningSec > 0 &&
-        this.workElapsedSec >= this.workDurationSec - this.preWarningSec &&
-        this.workElapsedSec < this.workDurationSec
+        this.workElapsedSec >= this.workDurationSec + this.workExtensionSec - this.preWarningSec &&
+        this.workElapsedSec < this.workDurationSec + this.workExtensionSec
       ) {
         this.preWarningFired = true;
         this.onPreWarning(this.getState());
       }
 
-      if (this.workElapsedSec >= this.workDurationSec) {
+      if (this.workElapsedSec >= this.workDurationSec + this.workExtensionSec) {
         if (this.skipNext) {
           this.skipNext = false;
           this.workElapsedSec = 0;
+          this.workExtensionSec = 0;
           this.preWarningFired = false;
           this.onTick(this.getState());
           return;
@@ -287,6 +298,7 @@ class Timer {
     this.lastBreakDurationSec = this.breakElapsedSec;
     this.phase = 'work';
     this.workElapsedSec = 0;
+    this.workExtensionSec = 0;
     this.breakElapsedSec = 0;
     this.idleResetArmed = true;
     this.preWarningFired = false;

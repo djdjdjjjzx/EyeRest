@@ -9,6 +9,7 @@ const { createTray, updateTrayMenu, setTrayTooltip } = require('./tray');
 const { Timer } = require('./timer');
 const { applyAutoLaunch } = require('./autostart');
 const windows = require('./windows');
+const miniTimer = require('./mini-timer');
 
 // Single-instance lock: prevent multiple EyeRest instances.
 const gotLock = app.requestSingleInstanceLock();
@@ -98,6 +99,7 @@ function startApp() {
   });
 
   registerIpc();
+  miniTimer.sync(store.getSettings());
 }
 
 function formatTooltip(state) {
@@ -122,6 +124,7 @@ function formatTooltip(state) {
 }
 
 function registerIpc() {
+  ipcMain.handle('mini-timer:menu', (event) => miniTimer.showMenu(event, timer, windows));
   ipcMain.handle('games:pick', async (event) => {
     if (process.platform !== 'win32') return [];
     const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender), {
@@ -143,6 +146,7 @@ function registerIpc() {
     }
     timer.applySettings(updated);
     gameMonitor.configure(updated);
+    miniTimer.sync(updated);
     broadcast('eyerest:settings', updated);
     return updated;
   });

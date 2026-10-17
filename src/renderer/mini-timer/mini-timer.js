@@ -1,0 +1,24 @@
+const pill = document.getElementById('pill');
+const label = document.getElementById('label');
+const remaining = document.getElementById('remaining');
+const button = document.getElementById('timer');
+function paint(state) {
+  const resting = state.phase === 'break';
+  const seconds = Math.max(0, Math.ceil(resting
+    ? state.breakDurationSec - state.breakElapsedSec
+    : state.workDurationSec - state.workElapsedSec));
+  const paused = state.paused || !!state.gamePauseName;
+  label.textContent = state.paused ? '已暫停' : state.gamePauseName ? '遊戲中 · 暫停'
+    : resting ? (state.isLongBreak ? '長休息中' : '休息中') : '下次休息';
+  remaining.textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  pill.className = `pill${paused ? ' paused' : resting ? ' resting' : seconds <= 60 ? ' soon' : ''}`;
+  button.title = `${label.textContent} ${remaining.textContent} · 點擊開啟選單`;
+  button.setAttribute('aria-label', button.title);
+}
+button.addEventListener('click', () => window.eyerest.openMiniTimerMenu().catch(console.error));
+window.eyerest.onTick(paint);
+window.eyerest.onState(paint);
+window.eyerest.onBreakStart(paint);
+window.eyerest.onBreakEnd(({ state }) => paint(state));
+window.eyerest.onIdleReset(paint);
+window.eyerest.getTimerState().then(paint).catch(console.error);

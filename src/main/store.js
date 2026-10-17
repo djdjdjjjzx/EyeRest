@@ -9,6 +9,8 @@ const DEFAULT_SETTINGS = {
   reminderMode: 'fullscreen', // 'fullscreen' | 'overlay' | 'notification'
   soundEnabled: true,
   autoLaunch: false,
+  miniTimerEnabled: true,
+  miniTimerPosition: null,
   gamePauseEnabled: false,
   gamePaths: [],
   allowSkip: true,

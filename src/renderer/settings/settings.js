@@ -54,6 +54,7 @@ function runInit() {
   const soundEnabled      = $('soundEnabled');
   const allowSkip         = $('allowSkip');
   const autoLaunch        = $('autoLaunch');
+  const miniTimerEnabled  = $('miniTimerEnabled');
   const preWarningEnabled = $('preWarningEnabled');
   const preWarnSec        = $('preWarnSec');
   const preWarnOut        = $('preWarnOut');
@@ -100,6 +101,7 @@ function runInit() {
       if (soundEnabled)      soundEnabled.checked      = !!s.soundEnabled;
       if (allowSkip)         allowSkip.checked         = !!s.allowSkip;
       if (autoLaunch)        autoLaunch.checked        = !!s.autoLaunch;
+      if (miniTimerEnabled) miniTimerEnabled.checked = s.miniTimerEnabled !== false;
       if (preWarningEnabled) preWarningEnabled.checked = s.preWarningEnabled !== false;
       if (preWarnSec)        preWarnSec.value          = s.preWarningSec || 60;
       text(preWarnOut, formatSec(preWarnSec ? preWarnSec.value : 60));
@@ -195,6 +197,7 @@ function runInit() {
   }
 
   // --- toggles ---
+  if (miniTimerEnabled) miniTimerEnabled.addEventListener('change', () => save({ miniTimerEnabled: miniTimerEnabled.checked }));
   if (soundEnabled)      soundEnabled.addEventListener('change',      () => save({ soundEnabled:      soundEnabled.checked }));
   if (allowSkip)         allowSkip.addEventListener('change',         () => save({ allowSkip:         allowSkip.checked }));
   if (autoLaunch)        autoLaunch.addEventListener('change',        () => save({ autoLaunch:        autoLaunch.checked }));

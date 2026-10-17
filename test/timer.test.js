@@ -383,6 +383,49 @@ assertEq('case insensitive full paths', normalizeGamePath('C:/Games/Test.EXE'), 
 assertEq('relative paths rejected', normalizeGamePath('game.exe'), '');
 assertEq('non executables rejected', normalizeGamePath('C:/game.txt'), '');
 
+console.log('Test 23: mini timer adds time and resets extension after a cycle');
+{
+  const { timer, step } = makeTimer({ workSec: 300, breakSec: 2 });
+  step(10);
+  timer.extendWork(1);
+  assertEq('one minute adds to current remaining', timer.getState().workDurationSec - timer.workElapsedSec, 350);
+  timer.extendWork(3);
+  assertEq('three minutes accumulate', timer.getState().workDurationSec - timer.workElapsedSec, 530);
+  timer.extendWork(2);
+  assertEq('unsupported duration ignored', timer.getState().workDurationSec, 540);
+  step(529);
+  assertEq('no early break at original deadline', timer.phase, 'work');
+  step();
+  assertEq('break begins at extended deadline', timer.phase, 'break');
+  timer.extendWork(1);
+  step(2);
+  assertEq('next cycle uses configured duration', timer.getState().workDurationSec, 300);
+}
+console.log('Test 24: idle clears extension and extension re-arms warning');
+{
+  const { timer, step, setIdle, events } = makeTimer({ workSec: 120, preWarningSec: 10 });
+  step(110);
+  timer.extendWork(1);
+  step(59);
+  assertEq('no premature repeated warning', events.filter(e => e.type === 'pre-warning').length, 1);
+  step();
+  assertEq('warning follows extended deadline', events.filter(e => e.type === 'pre-warning').length, 2);
+  setIdle(10); step();
+  assertEq('idle restores base duration', timer.getState().workDurationSec, 120);
+  assertEq('idle clears elapsed time', timer.workElapsedSec, 0);
+}
+console.log('Test 25: extension preserves pauses and immediate break');
+{
+  const { timer, step } = makeTimer({ workSec: 120 });
+  timer.togglePause(); timer.extendWork(3); step(2);
+  assertEq('extension preserves manual pause', timer.paused, true);
+  assertEq('extended timer stays frozen', timer.workElapsedSec, 0);
+  timer.togglePause(); timer.setGamePause('game.exe'); timer.extendWork(1); step(2);
+  assertEq('extension preserves game pause', timer.workElapsedSec, 0);
+  timer.forceBreak();
+  assertEq('immediate break works while gaming', timer.phase, 'break');
+}
+
 // ---------- Summary ----------
 console.log('');
 if (failures === 0) {
