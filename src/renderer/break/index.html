@@ -1,50 +1,27 @@
 <!doctype html>
 <html lang="zh-Hant">
-  <head>
-    <meta charset="utf-8" />
-    <title>EyeRest — 休息中</title>
-    <link rel="stylesheet" href="./break.css" />
-  </head>
-  <body class="mode-fullscreen">
-    <!-- Layered mountain silhouettes + lake gradient -->
-    <div class="scene">
-      <div class="sky"></div>
-      <div class="mist mist-a"></div>
-      <div class="mist mist-b"></div>
-      <svg class="mountains" viewBox="0 0 1600 400" preserveAspectRatio="none" aria-hidden="true">
-        <path class="ridge ridge-back"
-              d="M0,280 L140,180 L260,240 L380,160 L520,230 L660,170 L820,240 L960,180 L1120,250 L1260,170 L1420,230 L1600,180 L1600,400 L0,400 Z" />
-        <path class="ridge ridge-mid"
-              d="M0,320 L100,260 L220,300 L340,240 L480,300 L620,250 L780,310 L900,260 L1060,310 L1200,260 L1340,300 L1500,260 L1600,290 L1600,400 L0,400 Z" />
-        <path class="ridge ridge-front"
-              d="M0,360 L180,320 L320,340 L500,310 L680,340 L860,320 L1020,350 L1200,320 L1380,350 L1600,330 L1600,400 L0,400 Z" />
-      </svg>
-      <div class="lake"></div>
-    </div>
-
-    <main class="content">
-      <div class="label">20 / 20 / 20 護眼時刻</div>
-      <div class="ring-wrap">
-        <svg class="ring" viewBox="0 0 240 240" aria-hidden="true">
-          <circle class="ring-track" cx="120" cy="120" r="108" />
-          <circle class="ring-progress" cx="120" cy="120" r="108" />
-        </svg>
-        <div class="ring-center">
-          <div class="count" id="count">20</div>
-          <div class="count-unit">秒</div>
-        </div>
-      </div>
-      <div class="guide" id="guide">看 6 公尺外的物體，讓眼睛休息</div>
-      <div class="breath" id="breath">吸氣</div>
-
-      <div class="actions" id="actions">
-        <button class="btn btn-ghost" id="skip" hidden>跳過</button>
-      </div>
-    </main>
-
-    <audio id="chime" preload="auto">
-      <source src="../../../assets/sounds/chime.mp3" type="audio/mpeg" />
-    </audio>
-    <script src="./break.js"></script>
-  </body>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EyeRest — 休息中</title>
+  <link rel="stylesheet" href="./break.css" />
+</head>
+<body class="mode-fullscreen">
+  <div class="scene" aria-hidden="true"><div class="ambient ambient-a"></div><div class="ambient ambient-b"></div><div class="horizon"></div></div>
+  <header class="topbar">
+    <div class="brand"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 12s3.3-6 9-6 9 6 9 6-3.3 6-9 6-9-6-9-6Z"/><circle cx="12" cy="12" r="2.5"/></svg><span>EyeRest</span></div>
+    <span class="session"><span class="status-dot"></span><span class="label">眼睛休息時間</span></span>
+  </header>
+  <main class="content">
+    <div class="rest-symbol" aria-hidden="true"><div class="orbit orbit-outer"></div><div class="orbit orbit-inner"></div><svg viewBox="0 0 80 80" fill="none"><path d="M40 60V37M40 47C22 48 17 35 19 23c14-1 24 9 21 24ZM40 39C39 24 49 17 62 18c1 13-7 23-22 21Z"/></svg></div>
+    <div class="intro"><p class="eyebrow" id="eyebrow">A MOMENT FOR YOUR EYES</p><h1 id="heading">把目光，留給遠方。</h1><p class="guide" id="guide">望向 6 公尺外，讓眼睛慢慢放鬆。</p></div>
+    <div class="timer" role="timer" aria-label="休息剩餘時間"><span class="count" id="count">20</span><span class="count-unit" id="count-unit">秒後，繼續剛剛的美好</span></div>
+    <div class="progress-track" aria-hidden="true"><div class="progress" id="progress"></div></div>
+    <div class="breathing"><span class="breath-dot" aria-hidden="true"></span><span id="breath">吸氣</span><span class="breath-note">讓節奏慢下來</span></div>
+    <div class="actions" id="actions"><button class="btn" id="skip" hidden>跳過這次休息 <span class="key-hint">Esc</span></button></div>
+  </main>
+  <footer class="footer"><span class="footer-line"></span><span>短暫留白，是為了看見更多。</span><span class="footer-line"></span></footer>
+  <audio id="chime" preload="auto"><source src="../../../assets/sounds/chime.mp3" type="audio/mpeg" /></audio>
+  <script src="./break.js"></script>
+</body>
 </html>

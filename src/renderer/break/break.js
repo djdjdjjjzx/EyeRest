@@ -14,21 +14,20 @@
   const $label = document.querySelector('.label');
   const $guideEl = document.getElementById('guide');
   if (isLongBreak) {
-    if ($label) $label.textContent = '深呼吸時刻 · 長休息';
-    if ($guideEl) $guideEl.textContent = '站起來伸個懶腰，或眺望遠方 3 分鐘';
+    if ($label) $label.textContent = '好好放鬆一下 · 長休息';
+    document.getElementById('heading').textContent = '起身，換一個風景。';
+    document.getElementById('eyebrow').textContent = 'A LITTLE ROOM TO BREATHE';
+    if ($guideEl) $guideEl.textContent = '伸個懶腰、走一走，讓身體也休息一下。';
   }
+  if (mode === 'notification') document.getElementById('count-unit').textContent = '秒';
 
   const $count = document.getElementById('count');
-  const $ring = document.querySelector('.ring-progress');
+  const $progress = document.getElementById('progress');
   const $breath = document.getElementById('breath');
   const $skip = document.getElementById('skip');
   const $chime = document.getElementById('chime');
 
   if (allowSkip && $skip) $skip.hidden = false;
-
-  const RING_CIRC = 2 * Math.PI * 108;
-  $ring.style.strokeDasharray = String(RING_CIRC);
-  $ring.style.strokeDashoffset = '0';
 
   let remaining = totalSec;
   const started = Date.now();
@@ -36,7 +35,7 @@
   function render() {
     $count.textContent = String(Math.max(0, remaining));
     const progress = Math.min(1, (totalSec - remaining) / totalSec);
-    $ring.style.strokeDashoffset = String(RING_CIRC * progress);
+    $progress.style.transform = `scaleX(${1 - progress})`;
     // breathing cue alternates every 4s
     const beat = Math.floor((Date.now() - started) / 2000) % 2;
     $breath.textContent = beat === 0 ? '吸 氣' : '吐 氣';
