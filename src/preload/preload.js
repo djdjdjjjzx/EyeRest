@@ -29,5 +29,6 @@ contextBridge.exposeInMainWorld('eyerest', {
   onIdleReset: (cb) => ipcRenderer.on('eyerest:idle-reset', (_e, s) => cb(s)),
   onPreWarning: (cb) => ipcRenderer.on('eyerest:pre-warning', (_e, s) => cb(s)),
   onSettings: (cb) => ipcRenderer.on('eyerest:settings', (_e, s) => cb(s)),
+  onMiniAppearance: (cb) => ipcRenderer.on('eyerest:mini-appearance', (_e, s) => cb(s)),
   onState: (cb) => ipcRenderer.on('eyerest:state', (_e, s) => cb(s)),
 });

@@ -14,3 +14,10 @@ button:focus-visible { outline: 1px solid #abc6bc; border-radius: 10px; }
 .pill.soon #label { color: #dfc48c; }
 .pill.paused { background: #343d42ed; border-color: #69767c; color: #dbe0e3; }
 .pill.resting { background: #235247ed; border-color: #7fbba6; }
+
+/* Keep the hit area stable while the quiet appearance gently contracts. */
+.pill { opacity: var(--idle-opacity, .35); transform: scale(.9); transition: opacity .22s ease, transform .22s ease; }
+.handle { opacity: .4; transition: opacity .22s ease; }
+body.nearby .pill, .pill:hover, .pill:has(:focus-visible) { opacity: 1; transform: scale(1); }
+body.nearby .handle, .pill:hover .handle, .pill:has(:focus-visible) .handle { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .pill, .handle { transition: none; } }

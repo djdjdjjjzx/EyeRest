@@ -2,6 +2,10 @@ const pill = document.getElementById('pill');
 const label = document.getElementById('label');
 const remaining = document.getElementById('remaining');
 const button = document.getElementById('timer');
+window.eyerest.onMiniAppearance(({ active, opacity }) => {
+  document.body.classList.toggle('nearby', active);
+  document.documentElement.style.setProperty('--idle-opacity', opacity);
+});
 function paint(state) {
   const resting = state.phase === 'break';
   const seconds = Math.max(0, Math.ceil(resting

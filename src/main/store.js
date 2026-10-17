@@ -11,6 +11,7 @@ const DEFAULT_SETTINGS = {
   soundEnabled: true,
   autoLaunch: false,
   miniTimerEnabled: true,
+  miniTimerOpacity: 35,      // Idle opacity percentage; proximity always restores full visibility.
   miniTimerPosition: null,
   gamePauseEnabled: false,
   gamePaths: [],
@@ -65,6 +66,7 @@ function updateSettings(partial) {
   next.preWarningSec = clamp(next.preWarningSec, 10, 600);
   next.longBreakDurationSec = clamp(next.longBreakDurationSec, 30, 60 * 30);
   next.longBreakEvery = clamp(next.longBreakEvery, 2, 20);
+  next.miniTimerOpacity = clamp(next.miniTimerOpacity, 15, 100);
   next.gamePauseEnabled = next.gamePauseEnabled === true;
   const { normalizeGamePath } = require('./game-monitor');
   next.gamePaths = [...new Set((Array.isArray(next.gamePaths) ? next.gamePaths : []).map(normalizeGamePath).filter(Boolean))];

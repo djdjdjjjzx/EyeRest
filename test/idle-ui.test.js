@@ -29,6 +29,14 @@ app.whenReady().then(async () => {
   // Allow the renderer's initial IPC reads to finish.
   await settings.webContents.executeJavaScript('window.eyerest.getSettings()');
   assert.equal(await settings.webContents.executeJavaScript('document.getElementById("idleResetMin").value'), '5');
+  assert.equal(await settings.webContents.executeJavaScript('document.getElementById("miniTimerOpacity").value'), '35');
+  await settings.webContents.executeJavaScript(`(() => {
+    const slider = document.getElementById('miniTimerOpacity');
+    slider.value = '50'; slider.dispatchEvent(new Event('input')); slider.dispatchEvent(new Event('change'));
+    return window.eyerest.getSettings();
+  })()`);
+  assert.equal(store.getSettings().miniTimerOpacity, 50, 'floating opacity slider persists');
+  assert.equal(await settings.webContents.executeJavaScript('document.getElementById("miniTimerOpacityOut").textContent'), '50%');
   await settings.webContents.executeJavaScript(`(() => {
     const slider = document.getElementById('idleResetMin');
     slider.value = '10'; slider.dispatchEvent(new Event('change'));

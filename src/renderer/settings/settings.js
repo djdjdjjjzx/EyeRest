@@ -57,6 +57,8 @@ function runInit() {
   const allowSkip         = $('allowSkip');
   const autoLaunch        = $('autoLaunch');
   const miniTimerEnabled  = $('miniTimerEnabled');
+  const miniTimerOpacity = $('miniTimerOpacity');
+  const miniTimerOpacityOut = $('miniTimerOpacityOut');
   $('showMiniTimer').addEventListener('click', () => save({ miniTimerEnabled: true }));
   const preWarningEnabled = $('preWarningEnabled');
   const preWarnSec        = $('preWarnSec');
@@ -111,6 +113,8 @@ function runInit() {
   async function loadSettings() {
     try {
       const s = await window.eyerest.getSettings();
+      miniTimerOpacity.value = s.miniTimerOpacity ?? 35;
+      text(miniTimerOpacityOut, `${miniTimerOpacity.value}%`);
       gameEnabled.checked = !!s.gamePauseEnabled;
       paintGames(s.gamePaths || []);
       if (workMin)  workMin.value  = Math.round(s.workDurationSec / 60);
@@ -200,6 +204,10 @@ function runInit() {
   bindSlider(workMin, workOut, {
     label: (v) => `${v} 分`,
     save:  (v) => ({ workDurationSec: Number(v) * 60 }),
+  });
+  bindSlider(miniTimerOpacity, miniTimerOpacityOut, {
+    label: (v) => `${v}%`,
+    save: (v) => ({ miniTimerOpacity: Number(v) }),
   });
   bindSlider(breakSec, breakOut, {
     label: (v) => formatSec(v),

@@ -1,5 +1,5 @@
 // Run with: node_modules/.bin/electron test/mini-timer.test.js
-const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, screen } = require('electron');
 const assert = require('assert/strict');
 const fs = require('fs');
 const os = require('os');
@@ -19,6 +19,9 @@ app.whenReady().then(async () => {
   let warningClosed = false;
   const originalPopup = Menu.prototype.popup;
   const originalClosePopup = Menu.prototype.closePopup;
+  const originalCursor = screen.getCursorScreenPoint;
+  let cursor = { x: -10000, y: -10000 };
+  screen.getCursorScreenPoint = () => cursor;
   Menu.prototype.popup = function (options) { menu = this; popupOptions = options; };
   Menu.prototype.closePopup = function (owner) {
     assert.equal(owner, BrowserWindow.getAllWindows()[0]);
@@ -37,16 +40,36 @@ app.whenReady().then(async () => {
     assert.equal(win.isAlwaysOnTop(), true);
     assert.equal(win.isFocusable(), true);
     assert.deepEqual(win.getSize(), [204, 76]);
+    await win.webContents.insertCSS('.pill, .handle { transition: none !important; }');
+    const appearance = () => win.webContents.executeJavaScript('({ nearby: document.body.classList.contains("nearby"), opacity: getComputedStyle(document.getElementById("pill")).opacity })');
+    assert.equal((await appearance()).opacity, '0.35', 'default floating timer is faint');
+    const bounds = win.getBounds();
+    cursor = { x: bounds.x - 20, y: bounds.y + 30 };
+    await new Promise(resolve => setTimeout(resolve, 180));
+    assert.equal((await appearance()).nearby, true, 'approaching outside the window reveals it');
+    assert.equal((await appearance()).opacity, '1');
+    cursor = { x: -10000, y: -10000 };
+    mini.sync(store.updateSettings({ miniTimerOpacity: 55 }));
+    assert.equal((await appearance()).nearby, false, 'leaving fades the timer');
+    assert.equal((await appearance()).opacity, '0.55', 'opacity settings update the existing window');
+    assert.equal(store.updateSettings({ miniTimerOpacity: 0 }).miniTimerOpacity, 15);
+    assert.equal(store.updateSettings({ miniTimerOpacity: 200 }).miniTimerOpacity, 100);
+    mini.sync(store.updateSettings({ miniTimerOpacity: 35 }));
     if (process.env.EYEREST_PREVIEW_PATH) {
       await win.webContents.executeJavaScript('window.eyerest.getTimerState().then(state => paint({ ...state, workElapsedSec: 212 }))');
       const preview = await win.webContents.capturePage();
       fs.writeFileSync(process.env.EYEREST_PREVIEW_PATH, preview.toPNG());
       await win.webContents.executeJavaScript('window.eyerest.getTimerState().then(paint)');
     }
+    cursor = { x: bounds.x - 20, y: bounds.y + 30 };
+    mini.sync(store.getSettings());
+    await appearance();
     const handle = await win.webContents.executeJavaScript('({ width: document.querySelector(".handle").getBoundingClientRect().width, height: document.querySelector(".handle").getBoundingClientRect().height, region: getComputedStyle(document.querySelector(".handle")).webkitAppRegion })');
     assert.equal(handle.width, 64);
     assert.ok(handle.height >= 60);
     assert.equal(handle.region, 'drag');
+    cursor = { x: -10000, y: -10000 };
+    mini.sync(store.getSettings());
     assert.equal(win.isResizable(), false);
     const setVisible = (visible) => mini.sync(store.updateSettings({ miniTimerEnabled: visible }));
     const openMenu = () => mini.showMenu({ sender: win.webContents }, timer, { closePreWarning: () => { warningClosed = true; } }, () => setVisible(false));
@@ -58,7 +81,9 @@ app.whenReady().then(async () => {
       popupOptions.callback();
     }
     openMenu();
+    assert.equal((await appearance()).opacity, '1', 'open menu keeps timer visible away from the pointer');
     win.emit('blur');
+    assert.equal((await appearance()).opacity, '0.35', 'closing menu restores the idle appearance');
     assert.equal(closeCount, 1, 'losing focus dismisses the menu');
     win.emit('blur');
     assert.equal(closeCount, 1, 'already closed menu is not closed again');
@@ -142,6 +167,7 @@ app.whenReady().then(async () => {
   } finally {
     Menu.prototype.popup = originalPopup;
     Menu.prototype.closePopup = originalClosePopup;
+    screen.getCursorScreenPoint = originalCursor;
   }
   app.exit(0);
 }).catch(error => { console.error(error); app.exit(1); });

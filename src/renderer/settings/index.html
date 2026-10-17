@@ -155,6 +155,11 @@
         <span>顯示置頂迷你倒數浮窗</span>
       </label>
       <div class="hint">拖曳左側移動；點擊時間可再加 1／3 分鐘，或立即開始下一次休息。</div>
+      <label class="row" for="miniTimerOpacity">
+        <div class="row-head"><span>浮窗平時不透明度</span><output class="value" id="miniTimerOpacityOut" for="miniTimerOpacity">35%</output></div>
+        <input type="range" id="miniTimerOpacity" min="15" max="100" step="5" value="35" aria-describedby="miniTimerOpacityHint" />
+      </label>
+      <div class="hint" id="miniTimerOpacityHint">數值越低越淡，減少遮擋；滑鼠靠近時會放大並恢復清楚顯示，離開後自動淡化。</div>
       <button class="btn" id="showMiniTimer">顯示倒數浮窗</button>
       <div class="hint">隱藏後，亦可從右下角系統匣圖示的右鍵選單重新顯示；隱藏不影響計時。</div>
       <label class="toggle">

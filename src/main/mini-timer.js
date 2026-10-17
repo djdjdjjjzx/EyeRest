@@ -6,12 +6,29 @@ const WIDTH = 204;
 const HEIGHT = 76;
 let win = null;
 let activeMenu = null;
+let idleOpacity = 35;
+let lastAppearance = '';
+
+function updateAppearance() {
+  if (!win || win.isDestroyed()) return;
+  const { x, y } = screen.getCursorScreenPoint();
+  const bounds = win.getBounds();
+  const margin = 32;
+  const active = !!activeMenu || (x >= bounds.x - margin && x <= bounds.x + bounds.width + margin
+    && y >= bounds.y - margin && y <= bounds.y + bounds.height + margin);
+  const appearance = { active, opacity: idleOpacity / 100 };
+  const key = JSON.stringify(appearance);
+  if (key === lastAppearance) return;
+  lastAppearance = key;
+  win.webContents.send('eyerest:mini-appearance', appearance);
+}
 
 function closeMenu() {
   if (!activeMenu) return;
   const menu = activeMenu;
   activeMenu = null;
   menu.closePopup(win && !win.isDestroyed() ? win : undefined);
+  updateAppearance();
 }
 
 function positionOnScreen(position) {
@@ -34,12 +51,16 @@ function ensureVisible() {
 }
 
 function sync(settings, onContextMenu) {
+  idleOpacity = settings.miniTimerOpacity ?? 35;
   if (!settings.miniTimerEnabled) {
     closeMenu();
     if (win) win.destroy();
     return;
   }
-  if (win && !win.isDestroyed()) return;
+  if (win && !win.isDestroyed()) {
+    updateAppearance();
+    return;
+  }
   win = new BrowserWindow({
     ...positionOnScreen(settings.miniTimerPosition), width: WIDTH, height: HEIGHT,
     frame: false, transparent: true, alwaysOnTop: true, skipTaskbar: true,
@@ -51,6 +72,12 @@ function sync(settings, onContextMenu) {
     },
   });
   const current = win;
+  lastAppearance = '';
+  current.webContents.on('did-finish-load', () => {
+    lastAppearance = '';
+    updateAppearance();
+  });
+  const proximityTimer = setInterval(updateAppearance, 120);
   const openContextMenu = (event) => {
     event.preventDefault();
     if (onContextMenu) onContextMenu({ sender: current.webContents });
@@ -74,6 +101,7 @@ function sync(settings, onContextMenu) {
   screen.on('display-removed', ensureVisible);
   screen.on('display-metrics-changed', ensureVisible);
   current.on('closed', () => {
+    clearInterval(proximityTimer);
     screen.removeListener('display-removed', ensureVisible);
     screen.removeListener('display-metrics-changed', ensureVisible);
     win = null;
@@ -108,8 +136,10 @@ function showMenu(event, timer, windows, onHide) {
   ]);
   win.focus();
   activeMenu = menu;
+  updateAppearance();
   menu.popup({ window: win, callback: () => {
     if (activeMenu === menu) activeMenu = null;
+    updateAppearance();
   } });
 }
 
