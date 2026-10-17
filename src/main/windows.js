@@ -101,7 +101,9 @@ function openSettings() {
     return settingsWindow;
   }
   settingsWindow = new BrowserWindow({
-    width: 540, height: 640,
+    width: 1100, height: 800,
+    minWidth: 560, minHeight: 480,
+    icon: path.join(__dirname, '../../assets/icons/icon.png'),
     title: 'EyeRest — 設定',
     backgroundColor: '#f7faf9',
     autoHideMenuBar: true,

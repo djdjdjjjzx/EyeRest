@@ -1,19 +1,36 @@
-<\!doctype html>
+<!doctype html>
 <html lang="zh-Hant">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>EyeRest — 設定</title>
     <link rel="stylesheet" href="./settings.css" />
   </head>
   <body>
-    <header class="hero">
-      <div class="hero-title">EyeRest</div>
-      <div class="hero-sub">20-20-20 護眼法則 · 智慧閒置偵測</div>
-      <div class="status" id="status">狀態載入中…</div>
-    </header>
-
-    <section class="card">
-      <h3>時間設定</h3>
+    <aside class="sidebar">
+      <a class="brand" href="#top"><img src="../../../assets/icons/icon.svg" alt="" /><span>EyeRest<small>給眼睛一點留白</small></span></a>
+      <div class="nav-label">偏好設定</div>
+      <nav aria-label="設定分類">
+        <a href="#timing"><span aria-hidden="true">01</span>工作與休息</a>
+        <a href="#warnings"><span aria-hidden="true">02</span>提醒體驗</a>
+        <a href="#long-break"><span aria-hidden="true">03</span>深度休息</a>
+        <a href="#games"><span aria-hidden="true">04</span>遊戲與專注</a>
+        <a href="#system"><span aria-hidden="true">05</span>系統偏好</a>
+      </nav>
+      <div class="sidebar-note"><span class="note-eye" aria-hidden="true">20 · 20 · 20</span>每 20 分鐘，望向 6 公尺外，<br />讓眼睛休息 20 秒。</div>
+    </aside>
+    <main id="top">
+      <header class="hero">
+        <div><div class="eyebrow">YOUR DAILY EYE CARE</div><h1>讓休息，成為日常。</h1><p>調整適合你的節奏，專注之餘也照顧眼睛。</p></div>
+        <span class="save-state" id="saveState" role="status">變更會自動儲存</span>
+      </header>
+      <section class="status-panel" aria-label="目前狀態">
+        <div><span class="status-label">目前節奏</span><div class="status" id="status" role="status">狀態載入中…</div></div>
+        <div class="actions-row"><button class="btn btn-primary" id="breakNow">立刻休息 <span aria-hidden="true">↗</span></button><button class="btn" id="pauseToggle">暫停</button></div>
+      </section>
+      <div class="settings-grid">
+    <section class="card" id="timing">
+      <div class="section-heading"><span class="section-number">01</span><div><h2>工作與休息</h2><p>找到舒服的專注節奏</p></div></div>
 
       <label class="row">
         <div class="row-head">
@@ -53,11 +70,11 @@
       </label>
     </section>
 
-    <section class="card">
-      <h3>預先警告</h3>
+    <section class="card" id="warnings">
+      <div class="section-heading"><span class="section-number">02</span><div><h2>休息前提醒</h2><p>留一點時間，從容收尾</p></div></div>
       <label class="toggle">
         <input type="checkbox" id="preWarningEnabled" />
-        <span>休息前跳出小視窗提醒（立刻休息 / 再 3 分 / Skip）</span>
+        <span>休息前顯示預告小視窗</span>
       </label>
       <label class="row">
         <div class="row-head">
@@ -69,9 +86,9 @@
       </label>
     </section>
 
-    <section class="card">
-      <h3>提醒方式</h3>
-      <div class="seg" role="radiogroup" id="mode">
+    <section class="card" id="reminders">
+      <h2>提醒方式</h2><p class="section-description">選擇你偏好的休息體驗</p>
+      <div class="seg" role="radiogroup" aria-label="提醒方式" id="mode">
         <button role="radio" data-value="fullscreen">全螢幕</button>
         <button role="radio" data-value="overlay">半透明覆蓋</button>
         <button role="radio" data-value="notification">角落通知</button>
@@ -88,8 +105,8 @@
       </label>
     </section>
 
-    <section class="card">
-      <h3>長休息（深度休息）</h3>
+    <section class="card" id="long-break">
+      <div class="section-heading"><span class="section-number">03</span><div><h2>深度休息</h2><p>偶爾走開，讓身心一起充電</p></div></div>
       <label class="toggle">
         <input type="checkbox" id="longBreakEnabled" />
         <span>每隔幾次休息，改成更長的「深度休息」</span>
@@ -115,12 +132,12 @@
 
       <label class="toggle">
         <input type="checkbox" id="forceLongAfterSkip" />
-        <span>使用 Skip 跳過後，下一次強制改成長休息</span>
+        <span>跳過休息後，下一次改為深度休息</span>
       </label>
     </section>
 
-    <section class="card">
-      <h3>遊戲期間暫停</h3>
+    <section class="card" id="games">
+      <div class="section-heading"><span class="section-number">04</span><div><h2>遊戲與專注</h2><p>投入當下，切換後接續提醒</p></div></div>
       <label class="toggle">
         <input type="checkbox" id="gamePauseEnabled" />
         <span>遊戲期間自動暫停倒數（Windows）</span>
@@ -131,8 +148,8 @@
       <div class="hint" id="gameError" role="status"></div>
     </section>
 
-    <section class="card">
-      <h3>系統</h3>
+    <section class="card" id="system">
+      <div class="section-heading"><span class="section-number">05</span><div><h2>系統偏好</h2><p>讓 EyeRest 融入你的工作環境</p></div></div>
       <label class="toggle">
         <input type="checkbox" id="miniTimerEnabled" />
         <span>顯示置頂迷你倒數浮窗</span>
@@ -144,13 +161,12 @@
         <input type="checkbox" id="autoLaunch" />
         <span>開機時自動啟動 EyeRest</span>
       </label>
-      <div class="actions-row">
-        <button class="btn btn-primary" id="breakNow">立刻休息一次</button>
-        <button class="btn" id="pauseToggle">暫停</button>
-      </div>
+
     </section>
 
-    <footer class="footer">EyeRest v0.1.0</footer>
+      </div>
+      <footer class="footer"><span>EyeRest</span><span>小小休息，長久陪伴。</span></footer>
+    </main>
 
     <script src="./settings.js"></script>
   </body>

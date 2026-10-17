@@ -1,10 +1,13 @@
-# Icons 資料夾
+# EyeRest 圖示
 
-把以下檔案放進這裡：
+亮綠底與深色眼睛提高小尺寸辨識度。系統匣使用簡化線條，macOS 使用透明背景的單色模板。
 
-- `tray.png` — 系統匣圖示（建議 32×32 PNG，透明背景；Mac 建議是單色模板圖）
-- `icon.ico` — Windows 安裝檔圖示（多尺寸 ICO）
-- `icon.icns` — Mac app 圖示（ICNS 格式）
-- `icon.png` — 512×512 通用 PNG
+- `icon.svg`：應用程式與設定頁的向量原稿。
+- `tray.svg`：32px 系統匣專用向量原稿。
+- `icon.png` / `icon-256.png`：512px / 256px PNG。
+- `icon.ico`：Windows 多尺寸圖示（16、24、32、48、64、128、256px）。
+- `icon.icns`：macOS 圖示（128、256、512、1024px）。
+- `tray.png`：32px 彩色系統匣圖示。
+- `tray-mac.png` / `tray-mac@2x.png`：16px / 32px macOS 模板圖示。
 
-沒放也能跑，tray 會顯示一個小方塊（內建 fallback）。
+編輯 SVG 後，執行 `npm run icons` 重新產生平台圖示。需要已安裝專案的 Electron 開發相依套件；不需額外影像處理套件。macOS 模板原稿位於 `scripts/generate-icons.js`。

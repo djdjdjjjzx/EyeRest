@@ -1,6 +1,6 @@
 {
   "name": "eyerest",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Cross-platform eye-rest reminder app (20-20-20 rule) with smart idle detection",
   "main": "src/main/main.js",
   "author": "Max",
@@ -12,6 +12,7 @@
     "test": "node test/timer.test.js",
     "test:mini": "electron test/mini-timer.test.js",
     "test:idle": "electron test/idle-ui.test.js",
+    "icons": "electron scripts/generate-icons.js",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "dist:win": "electron-builder --win",

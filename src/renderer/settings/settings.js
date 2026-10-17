@@ -75,6 +75,25 @@ function runInit() {
 
   function text(el, t) { if (el) el.textContent = t; }
 
+  function paintSliders() {
+    document.querySelectorAll('input[type="range"]').forEach(input => {
+      const progress = (Number(input.value) - Number(input.min)) / (Number(input.max) - Number(input.min)) * 100;
+      input.style.setProperty('--progress', `${progress}%`);
+    });
+  }
+
+  const navLinks = [...document.querySelectorAll('nav a')];
+  const observer = new IntersectionObserver(entries => {
+    const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+    if (!visible.length) return;
+    const id = visible[0].target.id === 'reminders' ? 'warnings' : visible[0].target.id;
+    navLinks.forEach(link => {
+      if (link.hash === `#${id}`) link.setAttribute('aria-current', 'location');
+      else link.removeAttribute('aria-current');
+    });
+  }, { rootMargin: '-5% 0px -45% 0px' });
+  document.querySelectorAll('.card').forEach(card => observer.observe(card));
+
   function formatSec(sec) {
     const n = Number(sec) || 0;
     if (n < 60) return `${n} 秒`;
@@ -116,15 +135,22 @@ function runInit() {
       if (longDur)            longDur.value              = s.longBreakDurationSec || 180;
       text(longDurOut, formatSec(longDur ? longDur.value : 180));
       if (forceLongAfterSkip) forceLongAfterSkip.checked = s.forceLongBreakAfterSkip !== false;
+      paintSliders();
     } catch (err) {
       console.error('[EyeRest settings] loadSettings failed:', err);
     }
   }
 
   async function save(partial) {
+    const saveState = $('saveState');
+    text(saveState, '儲存中…');
     try {
       await window.eyerest.setSettings(partial);
+      text(saveState, '變更已儲存');
+      if (saveState) saveState.dataset.state = 'saved';
     } catch (err) {
+      text(saveState, '儲存失敗，請重新調整以重試');
+      if (saveState) saveState.dataset.state = 'error';
       console.error('[EyeRest settings] save failed:', err);
     }
   }
@@ -166,7 +192,7 @@ function runInit() {
   // --- slider live updates (also updates on every `input` while dragging) ---
   function bindSlider(input, out, mkSaved) {
     if (!input) return;
-    const update = () => text(out, mkSaved.label(input.value));
+    const update = () => { text(out, mkSaved.label(input.value)); paintSliders(); };
     input.addEventListener('input',  update);
     input.addEventListener('change', () => { update(); save(mkSaved.save(input.value)); });
   }
