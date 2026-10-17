@@ -74,8 +74,9 @@
       <div class="section-heading"><span class="section-number">02</span><div><h2>休息前提醒</h2><p>留一點時間，從容收尾</p></div></div>
       <label class="toggle">
         <input type="checkbox" id="preWarningEnabled" />
-        <span>休息前顯示預告小視窗</span>
+        <span>關閉通知（休息前預告）</span>
       </label>
+      <div class="hint">勾選後，不會在休息前跳出預告通知；到時間仍會正常提醒休息。</div>
       <label class="row">
         <div class="row-head">
           <span>提前多久警告</span>
@@ -154,7 +155,7 @@
         <input type="checkbox" id="miniTimerEnabled" />
         <span>顯示置頂迷你倒數浮窗</span>
       </label>
-      <div class="hint">拖曳左側移動；點擊時間可再加 1／3 分鐘，或立即開始下一次休息。</div>
+      <div class="hint">拖曳左側移動；點擊時間可開啟設定、重新計時、再加 1／3 分鐘，或立即開始下一次休息。</div>
       <label class="row" for="miniTimerOpacity">
         <div class="row-head"><span>浮窗平時不透明度</span><output class="value" id="miniTimerOpacityOut" for="miniTimerOpacity">35%</output></div>
         <input type="range" id="miniTimerOpacity" min="15" max="100" step="5" value="35" aria-describedby="miniTimerOpacityHint" />

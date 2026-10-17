@@ -493,6 +493,27 @@ console.log('Test 30: short sleep and game pause preserve progress');
   assertEq('sleep does not override game pause', timer.workElapsedSec, 101);
 }
 
+console.log('Test 31: restart clears elapsed time, extensions, skip and timed pause');
+{
+  const { timer, step, events } = makeTimer({ workSec: 120, preWarningSec: 10 });
+  step(110); timer.extendWork(3); timer.skipNextBreak(); timer.pauseFor(15);
+  timer.restart();
+  assertEq('restart restores full work duration', [timer.phase, timer.workElapsedSec, timer.getState().workDurationSec], ['work', 0, 120]);
+  assertEq('restart clears manual pause and timeout', [timer.paused, timer.pausedUntilMs, timer._pauseTimeout], [false, null, null]);
+  assertEq('restart clears skip and warning flags', [timer.skipNext, timer.preWarningFired], [false, false]);
+  step(110);
+  assertEq('restart re-arms pre-warning', events.filter(e => e.type === 'pre-warning').length, 2);
+}
+console.log('Test 32: restart ends breaks without recording completion and respects game pause');
+{
+  const { timer, step, events } = makeTimer({ workSec: 10, breakSec: 10 });
+  timer.forceBreak(); step(2); timer.restart();
+  assertEq('restart ends current break as incomplete', events.filter(e => e.type === 'break-end').pop().completed, false);
+  assertEq('restart clears break elapsed', [timer.phase, timer.breakElapsedSec, timer.workElapsedSec], ['work', 0, 0]);
+  timer.setGamePause('game.exe'); timer.restart(); step(3);
+  assertEq('restart preserves game pause', [timer.gamePauseName, timer.workElapsedSec], ['game.exe', 0]);
+}
+
 // ---------- Summary ----------
 console.log('');
 if (failures === 0) {

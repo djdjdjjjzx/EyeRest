@@ -17,6 +17,7 @@ app.whenReady().then(async () => {
   let popupOptions;
   let closeCount = 0;
   let warningClosed = false;
+  let settingsOpened = 0;
   const originalPopup = Menu.prototype.popup;
   const originalClosePopup = Menu.prototype.closePopup;
   const originalCursor = screen.getCursorScreenPoint;
@@ -72,12 +73,15 @@ app.whenReady().then(async () => {
     mini.sync(store.getSettings());
     assert.equal(win.isResizable(), false);
     const setVisible = (visible) => mini.sync(store.updateSettings({ miniTimerEnabled: visible }));
-    const openMenu = () => mini.showMenu({ sender: win.webContents }, timer, { closePreWarning: () => { warningClosed = true; } }, () => setVisible(false));
+    const openMenu = () => mini.showMenu({ sender: win.webContents }, timer, {
+      closePreWarning: () => { warningClosed = true; },
+      openSettings: () => { settingsOpened += 1; },
+    }, () => setVisible(false));
     for (const [target, name] of [[win.webContents, 'context-menu'], [win, 'system-context-menu']]) {
       let prevented = false;
       target.emit(name, { preventDefault: () => { prevented = true; } });
       assert.equal(prevented, true, 'right click suppresses the default menu');
-      assert.deepEqual(menu.items.map(item => item.label), ['再 1 分鐘', '再 3 分鐘', '立即下一次休息', '暫停計時', '隱藏']);
+      assert.deepEqual(menu.items.map(item => item.label), ['再 1 分鐘', '再 3 分鐘', '立即下一次休息', '暫停計時', '重新計時', '設定', '隱藏']);
       popupOptions.callback();
     }
     openMenu();
@@ -91,7 +95,7 @@ app.whenReady().then(async () => {
     openMenu();
     assert.equal(closeCount, 2, 'clicking timer again dismisses the menu');
     mini.showMenu({ sender: win.webContents }, timer, { closePreWarning: () => { warningClosed = true; } });
-    assert.deepEqual(menu.items.map(item => item.label), ['再 1 分鐘', '再 3 分鐘', '立即下一次休息', '暫停計時', '隱藏']);
+    assert.deepEqual(menu.items.map(item => item.label), ['再 1 分鐘', '再 3 分鐘', '立即下一次休息', '暫停計時', '重新計時', '設定', '隱藏']);
     menu.items[0].click();
     menu.items[1].click();
     assert.equal(timer.getState().workDurationSec, 1440);
@@ -137,6 +141,16 @@ app.whenReady().then(async () => {
     assert.deepEqual(saved, { x: 100, y: 100 });
     popupOptions.callback();
     openMenu();
+    menu.items.find(item => item.label === '設定').click();
+    assert.equal(settingsOpened, 1, 'settings action opens the settings window');
+    warningClosed = false;
+    menu.items.find(item => item.label === '重新計時').click();
+    assert.equal(warningClosed, true, 'restart dismisses the pre-warning');
+    assert.equal(timer.phase, 'work', 'restart exits the break');
+    assert.equal(timer.getState().workDurationSec - timer.workElapsedSec, 1200);
+    win.webContents.send('eyerest:tick', timer.getState());
+    assert.equal((await read()).time, '20:00', 'restart restores the configured countdown');
+    timer.forceBreak();
     menu.items.find(item => item.label === '隱藏').click();
     assert.equal(BrowserWindow.getAllWindows().length, 0);
     assert.equal(store.getSettings().miniTimerEnabled, false, 'hiding updates the setting');

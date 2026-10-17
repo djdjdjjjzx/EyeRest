@@ -1,5 +1,22 @@
 # 版本紀錄 / Changelog
 
+## 0.2.1 — 2026-10-17
+
+### 新增與改善
+- 迷你浮窗平時淡化並略微縮小，滑鼠靠近及選單開啟時恢復完整外觀；可設定 15%～100% 平時不透明度，預設 35%。
+- 浮窗快捷選單新增「設定」與「重新計時」。重新計時會清除工作進度、延長時間、跳過標記及手動暫停，從完整工作時間開始；若正在休息，會以未完成方式結束，不計入完成統計。遊戲與閒置等自動暫停條件仍適用。
+- 「關閉通知（休息前預告）」勾選後會立即關閉現有預告並停用提前警告時間滑桿；正式休息提醒照常運作。
+- 補上浮窗淡化、設定持久化、快捷選單與重新計時的回歸測試。
+
+### English
+- Fade and slightly shrink the mini timer while idle; restore full visibility near the pointer or while its menu is open. Persist idle opacity from 15% to 100%, defaulting to 35%.
+- Add settings and restart actions to the mini timer menu. Restart clears progress, extensions, skip and manual pause, ends an active break without recording completion, and retains automatic pause conditions.
+- Add a disable-prewarning control that dismisses existing prewarnings and disables the lead-time slider while keeping scheduled breaks enabled.
+- Extend regression coverage for appearance, persistence, menu actions and timer restart.
+
+### 發行平台
+- Windows x64 未簽章 NSIS 安裝程式；本次未提供或驗證 macOS DMG。
+
 ## 0.2.0 — 2026-10-17
 
 ### 新增

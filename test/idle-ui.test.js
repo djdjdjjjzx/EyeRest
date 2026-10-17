@@ -30,6 +30,21 @@ app.whenReady().then(async () => {
   await settings.webContents.executeJavaScript('window.eyerest.getSettings()');
   assert.equal(await settings.webContents.executeJavaScript('document.getElementById("idleResetMin").value'), '5');
   assert.equal(await settings.webContents.executeJavaScript('document.getElementById("miniTimerOpacity").value'), '35');
+  assert.equal(await settings.webContents.executeJavaScript('document.getElementById("preWarningEnabled").checked'), false);
+  await settings.webContents.executeJavaScript(`(() => {
+    const toggle = document.getElementById('preWarningEnabled');
+    toggle.checked = true; toggle.dispatchEvent(new Event('change'));
+    return window.eyerest.getSettings();
+  })()`);
+  assert.equal(store.getSettings().preWarningEnabled, false, 'disable notification toggle persists');
+  assert.equal(await settings.webContents.executeJavaScript('document.getElementById("preWarnSec").disabled'), true);
+  await settings.webContents.executeJavaScript(`(() => {
+    const toggle = document.getElementById('preWarningEnabled');
+    toggle.checked = false; toggle.dispatchEvent(new Event('change'));
+    return window.eyerest.getSettings();
+  })()`);
+  assert.equal(store.getSettings().preWarningEnabled, true, 'unchecking restores pre-warning');
+  assert.equal(await settings.webContents.executeJavaScript('document.getElementById("preWarnSec").disabled'), false);
   await settings.webContents.executeJavaScript(`(() => {
     const slider = document.getElementById('miniTimerOpacity');
     slider.value = '50'; slider.dispatchEvent(new Event('input')); slider.dispatchEvent(new Event('change'));

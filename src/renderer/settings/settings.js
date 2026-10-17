@@ -130,7 +130,8 @@ function runInit() {
       if (allowSkip)         allowSkip.checked         = !!s.allowSkip;
       if (autoLaunch)        autoLaunch.checked        = !!s.autoLaunch;
       if (miniTimerEnabled) miniTimerEnabled.checked = s.miniTimerEnabled !== false;
-      if (preWarningEnabled) preWarningEnabled.checked = s.preWarningEnabled !== false;
+      if (preWarningEnabled) preWarningEnabled.checked = s.preWarningEnabled === false;
+      if (preWarnSec) preWarnSec.disabled = s.preWarningEnabled === false;
       if (preWarnSec)        preWarnSec.value          = s.preWarningSec || 60;
       text(preWarnOut, formatSec(preWarnSec ? preWarnSec.value : 60));
       if (longBreakEnabled)   longBreakEnabled.checked   = s.longBreakEnabled !== false;
@@ -249,7 +250,10 @@ function runInit() {
   if (soundEnabled)      soundEnabled.addEventListener('change',      () => save({ soundEnabled:      soundEnabled.checked }));
   if (allowSkip)         allowSkip.addEventListener('change',         () => save({ allowSkip:         allowSkip.checked }));
   if (autoLaunch)        autoLaunch.addEventListener('change',        () => save({ autoLaunch:        autoLaunch.checked }));
-  if (preWarningEnabled) preWarningEnabled.addEventListener('change', () => save({ preWarningEnabled: preWarningEnabled.checked }));
+  if (preWarningEnabled) preWarningEnabled.addEventListener('change', () => {
+    preWarnSec.disabled = preWarningEnabled.checked;
+    save({ preWarningEnabled: !preWarningEnabled.checked });
+  });
   if (longBreakEnabled)  longBreakEnabled.addEventListener('change',  () => save({ longBreakEnabled:  longBreakEnabled.checked }));
   if (forceLongAfterSkip) forceLongAfterSkip.addEventListener('change', () => save({ forceLongBreakAfterSkip: forceLongAfterSkip.checked }));
 

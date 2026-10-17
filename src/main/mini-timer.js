@@ -132,6 +132,11 @@ function showMenu(event, timer, windows, onHide) {
       const paused = timer.togglePause();
       if (paused) windows.closePreWarning();
     } },
+    { label: '重新計時', click: () => {
+      windows.closePreWarning();
+      timer.restart();
+    } },
+    { label: '設定', click: () => windows.openSettings() },
     { label: '隱藏', click: () => onHide() },
   ]);
   win.focus();

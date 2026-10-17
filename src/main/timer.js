@@ -211,6 +211,24 @@ class Timer {
     this._startBreak();
   }
 
+  restart() {
+    this._clearPauseTimeout();
+    this.paused = false;
+    this.skipNext = false;
+    if (this.phase === 'break') {
+      this._endBreak(false);
+    } else {
+      this.workElapsedSec = 0;
+      this.workExtensionSec = 0;
+      this.breakElapsedSec = 0;
+      this.preWarningFired = false;
+      this.idleResetArmed = true;
+      this.idleReset = false;
+    }
+    this.onPauseChange(this.getState());
+    this.onTick(this.getState());
+  }
+
   getState() {
     const activeBreakDuration = this.phase === 'break'
       ? this.currentBreakDurationSec

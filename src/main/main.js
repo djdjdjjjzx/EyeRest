@@ -164,6 +164,7 @@ function registerIpc() {
       await applyAutoLaunch(updated.autoLaunch).catch(console.error);
     }
     timer.applySettings(updated);
+    if (!updated.preWarningEnabled) windows.closePreWarning();
     gameMonitor.configure(updated);
     miniTimer.sync(updated, openMiniTimerMenu);
     broadcast('eyerest:settings', updated);
