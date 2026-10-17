@@ -28,10 +28,21 @@ function broadcast(channel, payload) {
   });
 }
 
+function setMiniTimerVisible(visible) {
+  const updated = store.updateSettings({ miniTimerEnabled: visible });
+  miniTimer.sync(updated, openMiniTimerMenu);
+  broadcast('eyerest:settings', updated);
+}
+
+function openMiniTimerMenu(event) {
+  miniTimer.showMenu(event, timer, windows, () => setMiniTimerVisible(false));
+}
+
 function startApp() {
   if (process.platform === 'darwin' && app.dock) app.dock.hide();
 
   createTray({
+    onShowMiniTimer: () => setMiniTimerVisible(true),
     onOpenSettings: () => windows.openSettings(),
     onOpenStats: () => windows.openStats(),
     onPauseToggle: () => {
@@ -104,7 +115,7 @@ function startApp() {
   });
 
   registerIpc();
-  miniTimer.sync(store.getSettings());
+  miniTimer.sync(store.getSettings(), openMiniTimerMenu);
 }
 
 function formatTooltip(state) {
@@ -132,7 +143,7 @@ function formatTooltip(state) {
 }
 
 function registerIpc() {
-  ipcMain.handle('mini-timer:menu', (event) => miniTimer.showMenu(event, timer, windows));
+  ipcMain.handle('mini-timer:menu', openMiniTimerMenu);
   ipcMain.handle('games:pick', async (event) => {
     if (process.platform !== 'win32') return [];
     const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender), {
@@ -154,7 +165,7 @@ function registerIpc() {
     }
     timer.applySettings(updated);
     gameMonitor.configure(updated);
-    miniTimer.sync(updated);
+    miniTimer.sync(updated, openMiniTimerMenu);
     broadcast('eyerest:settings', updated);
     return updated;
   });

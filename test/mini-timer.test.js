@@ -26,7 +26,8 @@ app.whenReady().then(async () => {
     popupOptions.callback();
   };
   try {
-    mini.sync(store.getSettings());
+    const openContextMenu = (event) => mini.showMenu(event, timer, { closePreWarning: () => { warningClosed = true; } }, () => setVisible(false));
+    mini.sync(store.getSettings(), openContextMenu);
     let win = BrowserWindow.getAllWindows()[0];
     await new Promise(resolve => win.webContents.once('did-finish-load', resolve));
     const read = () => win.webContents.executeJavaScript('({ label: document.getElementById("label").textContent, time: document.getElementById("remaining").textContent, className: document.getElementById("pill").className })');
@@ -35,13 +36,27 @@ app.whenReady().then(async () => {
     assert.equal((await read()).time, '20:00');
     assert.equal(win.isAlwaysOnTop(), true);
     assert.equal(win.isFocusable(), true);
-    assert.deepEqual(win.getSize(), [214, 68]);
+    assert.deepEqual(win.getSize(), [204, 76]);
+    if (process.env.EYEREST_PREVIEW_PATH) {
+      await win.webContents.executeJavaScript('window.eyerest.getTimerState().then(state => paint({ ...state, workElapsedSec: 212 }))');
+      const preview = await win.webContents.capturePage();
+      fs.writeFileSync(process.env.EYEREST_PREVIEW_PATH, preview.toPNG());
+      await win.webContents.executeJavaScript('window.eyerest.getTimerState().then(paint)');
+    }
     const handle = await win.webContents.executeJavaScript('({ width: document.querySelector(".handle").getBoundingClientRect().width, height: document.querySelector(".handle").getBoundingClientRect().height, region: getComputedStyle(document.querySelector(".handle")).webkitAppRegion })');
     assert.equal(handle.width, 64);
     assert.ok(handle.height >= 60);
     assert.equal(handle.region, 'drag');
     assert.equal(win.isResizable(), false);
-    const openMenu = () => mini.showMenu({ sender: win.webContents }, timer, { closePreWarning: () => { warningClosed = true; } });
+    const setVisible = (visible) => mini.sync(store.updateSettings({ miniTimerEnabled: visible }));
+    const openMenu = () => mini.showMenu({ sender: win.webContents }, timer, { closePreWarning: () => { warningClosed = true; } }, () => setVisible(false));
+    for (const [target, name] of [[win.webContents, 'context-menu'], [win, 'system-context-menu']]) {
+      let prevented = false;
+      target.emit(name, { preventDefault: () => { prevented = true; } });
+      assert.equal(prevented, true, 'right click suppresses the default menu');
+      assert.deepEqual(menu.items.map(item => item.label), ['再 1 分鐘', '再 3 分鐘', '立即下一次休息', '暫停計時', '隱藏']);
+      popupOptions.callback();
+    }
     openMenu();
     win.emit('blur');
     assert.equal(closeCount, 1, 'losing focus dismisses the menu');
@@ -51,7 +66,7 @@ app.whenReady().then(async () => {
     openMenu();
     assert.equal(closeCount, 2, 'clicking timer again dismisses the menu');
     mini.showMenu({ sender: win.webContents }, timer, { closePreWarning: () => { warningClosed = true; } });
-    assert.deepEqual(menu.items.map(item => item.label), ['再 1 分鐘', '再 3 分鐘', '立即下一次休息', '暫停計時']);
+    assert.deepEqual(menu.items.map(item => item.label), ['再 1 分鐘', '再 3 分鐘', '立即下一次休息', '暫停計時', '隱藏']);
     menu.items[0].click();
     menu.items[1].click();
     assert.equal(timer.getState().workDurationSec, 1440);
@@ -95,13 +110,35 @@ app.whenReady().then(async () => {
     win.emit('moved');
     const saved = store.getSettings().miniTimerPosition;
     assert.deepEqual(saved, { x: 100, y: 100 });
-    mini.sync({ ...store.getSettings(), miniTimerEnabled: false });
+    popupOptions.callback();
+    openMenu();
+    menu.items.find(item => item.label === '隱藏').click();
     assert.equal(BrowserWindow.getAllWindows().length, 0);
-    mini.sync(store.getSettings());
+    assert.equal(store.getSettings().miniTimerEnabled, false, 'hiding updates the setting');
+    const elapsed = timer.breakElapsedSec;
+    timer._tick();
+    assert.equal(timer.breakElapsedSec, elapsed + 1, 'timer keeps running while hidden');
+    mini.sync(store.updateSettings({ soundEnabled: false }));
+    assert.equal(BrowserWindow.getAllWindows().length, 0, 'unrelated settings do not reopen the window');
+    const originalBuild = Menu.buildFromTemplate;
+    let trayMenu;
+    let tray;
+    try {
+      Menu.buildFromTemplate = function (template) {
+        trayMenu = originalBuild.call(this, template);
+        return trayMenu;
+      };
+      tray = require('../src/main/tray').createTray({ onShowMiniTimer: () => setVisible(true) });
+      trayMenu.items.find(item => item.label === '顯示倒數浮窗').click();
+    } finally {
+      Menu.buildFromTemplate = originalBuild;
+      if (tray) tray.destroy();
+    }
+    assert.equal(store.getSettings().miniTimerEnabled, true, 'tray action re-enables the window');
     win = BrowserWindow.getAllWindows()[0];
     assert.deepEqual(win.getPosition(), [100, 100]);
     mini.sync({ miniTimerEnabled: false });
-    console.log('Mini timer Electron checks passed: enlarged drag area, blur/repeat-click dismissal, preload, menu actions, pause, position, toggle.');
+    console.log('Mini timer Electron checks passed: hide, background countdown, tray restore, position, menu dismissal, pause/resume and controls.');
   } finally {
     Menu.prototype.popup = originalPopup;
     Menu.prototype.closePopup = originalClosePopup;

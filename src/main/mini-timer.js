@@ -2,8 +2,8 @@ const { BrowserWindow, Menu, screen } = require('electron');
 const path = require('path');
 const store = require('./store');
 
-const WIDTH = 214;
-const HEIGHT = 68;
+const WIDTH = 204;
+const HEIGHT = 76;
 let win = null;
 let activeMenu = null;
 
@@ -33,7 +33,7 @@ function ensureVisible() {
   if (bounds.x !== next.x || bounds.y !== next.y) win.setPosition(next.x, next.y);
 }
 
-function sync(settings) {
+function sync(settings, onContextMenu) {
   if (!settings.miniTimerEnabled) {
     closeMenu();
     if (win) win.destroy();
@@ -51,6 +51,13 @@ function sync(settings) {
     },
   });
   const current = win;
+  const openContextMenu = (event) => {
+    event.preventDefault();
+    if (onContextMenu) onContextMenu({ sender: current.webContents });
+  };
+  current.webContents.on('context-menu', openContextMenu);
+  // Windows handles right clicks on the native drag region separately.
+  current.on('system-context-menu', openContextMenu);
   // Native popup menus need a focusable owner to dismiss on outside clicks.
   // Showing the timer itself still uses showInactive, so startup never takes focus.
   current.on('blur', closeMenu);
@@ -73,7 +80,7 @@ function sync(settings) {
   });
 }
 
-function showMenu(event, timer, windows) {
+function showMenu(event, timer, windows, onHide) {
   if (!win || event.sender !== win.webContents) return;
   if (activeMenu) {
     closeMenu();
@@ -97,6 +104,7 @@ function showMenu(event, timer, windows) {
       const paused = timer.togglePause();
       if (paused) windows.closePreWarning();
     } },
+    { label: '隱藏', click: () => onHide() },
   ]);
   win.focus();
   activeMenu = menu;

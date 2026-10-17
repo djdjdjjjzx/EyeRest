@@ -57,6 +57,7 @@ function runInit() {
   const allowSkip         = $('allowSkip');
   const autoLaunch        = $('autoLaunch');
   const miniTimerEnabled  = $('miniTimerEnabled');
+  $('showMiniTimer').addEventListener('click', () => save({ miniTimerEnabled: true }));
   const preWarningEnabled = $('preWarningEnabled');
   const preWarnSec        = $('preWarnSec');
   const preWarnOut        = $('preWarnOut');

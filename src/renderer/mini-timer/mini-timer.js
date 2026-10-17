@@ -13,7 +13,7 @@ function paint(state) {
     : resting ? (state.isLongBreak ? '長休息中' : '休息中') : '下次休息';
   remaining.textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
   pill.className = `pill${paused ? ' paused' : resting ? ' resting' : seconds <= 60 ? ' soon' : ''}`;
-  button.title = `${label.textContent} ${remaining.textContent} · 點擊開啟選單`;
+  button.title = `${label.textContent} ${remaining.textContent} · 左鍵或右鍵開啟選單`;
   button.setAttribute('aria-label', button.title);
 }
 button.addEventListener('click', () => window.eyerest.openMiniTimerMenu().catch(console.error));

@@ -69,6 +69,7 @@ function updateTrayMenu({ paused, pausedUntilMs }) {
     },
     { type: 'separator' },
     { label: '設定…', click: () => handlers.onOpenSettings?.() },
+    { label: '顯示倒數浮窗', click: () => handlers.onShowMiniTimer?.() },
     { label: '統計…', click: () => handlers.onOpenStats?.() },
     { type: 'separator' },
     { label: '結束 EyeRest', click: () => handlers.onQuit?.() },
