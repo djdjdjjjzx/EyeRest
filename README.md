@@ -15,12 +15,10 @@
 
 ---
 
-## v0.3.0 更新重點
+## v0.3.1 更新重點
 
-- 自訂休息背景：匯入 PNG／JPG，提供預覽與恢復預設，三種提醒模式皆可使用。
-- 內建開始／結束提示音：獨立開關、各自音量與試聽，多螢幕只播放一次。
-- 統計時區：可跟隨系統或指定台北、UTC 等時區，新紀錄可依所選時區重新歸日。
-- 修正截圖後迷你倒數浮窗消失的問題。
+- 修正一般休息、深度休息或提前結束後，浮窗仍停留在舊休息畫面的問題。
+- 浮窗被其他視窗遮住時仍持續更新倒數，恢復顯示後接續最新狀態。
 
 完整版本紀錄請見 [CHANGELOG](CHANGELOG.md)。
 
@@ -71,7 +69,7 @@ EyeRest 解決了這兩件事。
 
 ### Windows
 
-1. 到 [Releases 頁面](https://github.com/djdjdjjjzx/EyeRest/releases/latest) 下載 `EyeRest.Setup.0.3.0.exe`（Windows x64）
+1. 到 [Releases 頁面](https://github.com/djdjdjjjzx/EyeRest/releases/latest) 下載 `EyeRest.Setup.0.3.1.exe`（Windows x64）
 2. 雙擊安裝
 3. 第一次執行時 Windows SmartScreen 會跳警告（因為 app 沒買付費簽章）→ 點「**更多資訊**」→「**仍要執行**」
 4. 安裝完啟動後，右下角系統匣會出現 EyeRest 眼睛小圖示，右鍵就能進入設定

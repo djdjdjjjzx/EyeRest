@@ -1,5 +1,12 @@
 # 版本紀錄 / Changelog
 
+## 0.3.1 — 2026-10-18
+
+- 停用迷你倒數浮窗的背景節流，修正休息結束後仍顯示過期倒數的問題。
+- 補上實際計時器、IPC 與預載橋接的整合測試，涵蓋一般／深度休息完成、提前結束，以及隱藏後恢復顯示的倒數更新。
+- Disable background throttling for the mini timer to prevent stale countdowns after breaks.
+- Cover normal, long and skipped break transitions through the real timer/IPC/preload path, including countdown updates while hidden and after restoring visibility.
+
 ## 0.3.0 — 2026-10-18
 
 - 自訂休息背景：支援 PNG／JPG（最大 10 MB、3,200 萬像素），保存應用程式專用副本；可預覽、替換或恢復預設，一般／深度休息及三種提醒模式皆適用，讀取失敗時回復預設背景。
