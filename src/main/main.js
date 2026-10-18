@@ -149,6 +149,7 @@ function formatTooltip(state) {
 }
 
 function registerIpc() {
+  require('./background').registerBackgroundIpc(broadcast);
   ipcMain.handle('sound:preview', (_event, kind) => playSound(kind, store.getSettings(), true));
   ipcMain.handle('mini-timer:menu', openMiniTimerMenu);
   ipcMain.handle('games:pick', async (event) => {

@@ -95,6 +95,15 @@
         <button role="radio" data-value="notification">角落通知</button>
       </div>
 
+      <div class="row">
+        <div class="row-head"><span>休息背景圖片</span></div>
+        <img id="backgroundPreview" class="background-preview" alt="自訂休息背景預覽" hidden />
+        <div class="hint background-name" id="backgroundName">使用預設背景</div>
+        <div class="actions-row background-actions"><button class="btn" id="pickBackground">選擇圖片</button><button class="btn" id="clearBackground" disabled>恢復預設</button></div>
+        <div class="hint">支援 PNG、JPG，最大 10 MB。圖片置中裁切填滿，並加上暗色遮罩；一般與深度休息皆適用。</div>
+        <div class="hint" id="backgroundStatus" role="status"></div>
+      </div>
+
       <label class="toggle">
         <input type="checkbox" id="soundEnabled" />
         <span>播放休息開始提示音</span>

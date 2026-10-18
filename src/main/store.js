@@ -9,6 +9,7 @@ const DEFAULT_SETTINGS = {
   idleThresholdSec: 2 * 60,   // 2 minutes
   idleResetDelaySec: 5 * 60, // Additional idle time after pausing before reset
   reminderMode: 'fullscreen', // 'fullscreen' | 'overlay' | 'notification'
+  breakBackgroundImage: null, // { url, name } for an imported local picture
   soundEnabled: true,
   breakEndSoundEnabled: true,
   soundVolume: 50,

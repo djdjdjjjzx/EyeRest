@@ -42,6 +42,9 @@ input[type="range"] { width:100%; margin:6px 0; height:22px; appearance:none; ba
 input[type="range"]::-webkit-slider-runnable-track { height:5px; border-radius:10px; background:linear-gradient(to right,var(--accent) var(--progress),#e8eddf var(--progress)); }
 input[type="range"]::-webkit-slider-thumb { appearance:none; width:17px; height:17px; margin-top:-6px; border-radius:50%; border:3px solid #fff; background:var(--accent); box-shadow:0 0 0 1px #a4b29b,0 2px 4px #203d3320; }
 .hint { margin-top:5px; color:var(--text-soft); font-size:12px; line-height:1.7; }
+.background-preview { width:100%; height:140px; object-fit:cover; border-radius:9px; margin-top:8px; }
+.background-name { overflow-wrap:anywhere; }
+.background-actions { margin-top:10px; flex-wrap:wrap; }
 .toggle { display:flex; align-items:center; gap:12px; padding:12px 0; cursor:pointer; font-size:13px; }
 .toggle+.toggle { border-top:1px solid #f0f2eb; }
 .toggle input { appearance:none; width:34px; height:20px; flex-shrink:0; margin:0; background:#ced6c8; border-radius:20px; position:relative; cursor:pointer; transition:background .15s; }

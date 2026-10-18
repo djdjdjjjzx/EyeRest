@@ -5,6 +5,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('eyerest', {
   // settings
   getSettings: () => ipcRenderer.invoke('settings:get'),
+  pickBreakBackground: () => ipcRenderer.invoke('background:pick'),
+  clearBreakBackground: () => ipcRenderer.invoke('background:clear'),
   setSettings: (partial) => ipcRenderer.invoke('settings:set', partial),
   previewSound: (kind) => ipcRenderer.invoke('sound:preview', kind),
   onSound: (cb) => ipcRenderer.on('eyerest:sound', (_e, s) => cb(s)),

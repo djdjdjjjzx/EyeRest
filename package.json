@@ -13,6 +13,7 @@
     "test:sound-stats": "electron test/sound-stats.test.js",
     "test:mini": "electron test/mini-timer.test.js",
     "test:idle": "electron test/idle-ui.test.js",
+    "test:background": "electron test/background.test.js",
     "icons": "electron scripts/generate-icons.js",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",

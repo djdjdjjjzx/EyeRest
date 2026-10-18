@@ -6,6 +6,11 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); user
 body.is-long { --bg: #241e1c; --text: #eee1d3; --soft: #bdab9b; --muted: #a38d7a; --accent: #d9b78e; --glow: 172, 130, 90; }
 body.mode-overlay { background: rgba(14, 26, 22, .94); }
 body.is-long.mode-overlay { background: rgba(32, 26, 23, .94); }
+.background-image, .background-shade { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.background-image { object-fit:cover; }
+.background-shade { background:rgba(5, 14, 11, .75); }
+.has-background { --text:#f0f5ec; --soft:#d3dfd1; --muted:#b6c8b7; }
+.has-background.is-long { --text:#fff2e4; --soft:#e4d5c6; --muted:#d0beac; }
 .scene { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .ambient { position: absolute; border-radius: 50%; background: radial-gradient(ellipse, rgba(var(--glow), .12), transparent 68%); }
 .ambient-a { width: 90vw; height: 100vh; top: -36%; left: -28%; }
@@ -63,6 +68,8 @@ body.mode-notification { background: transparent; }
 .mode-notification .scene, .mode-notification .topbar, .mode-notification .rest-symbol,
 .mode-notification .eyebrow, .mode-notification .breathing, .mode-notification .footer { display: none; }
 .mode-notification .content { height: 100%; padding: 20px 24px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto auto; column-gap: 14px; row-gap: 12px; text-align: left; align-content: center; border-radius: 16px; background: var(--bg); border: 1px solid rgba(var(--glow), .24); }
+.mode-notification.has-background .content { background:transparent; }
+.mode-notification .background-image, .mode-notification .background-shade { border-radius:16px; }
 .mode-notification .intro { grid-column: 1; grid-row: 1; }
 .mode-notification h1 { font-size: 17px; letter-spacing: .02em; }
 .mode-notification .guide { margin-top: 5px; font-size: 11px; letter-spacing: 0; }

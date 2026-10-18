@@ -15,6 +15,36 @@
 
 function runInit() {
   const $ = (id) => document.getElementById(id);
+  const pickBackground = $('pickBackground');
+  const clearBackground = $('clearBackground');
+  const backgroundPreview = $('backgroundPreview');
+  let backgroundBusy = false;
+  backgroundPreview.addEventListener('error', () => {
+    backgroundPreview.hidden = true;
+    $('backgroundStatus').textContent = '背景圖片無法讀取，休息時會使用預設背景。請重新選擇圖片。';
+  });
+  async function changeBackground(clear) {
+    backgroundBusy = true;
+    pickBackground.disabled = clearBackground.disabled = true;
+    $('backgroundStatus').textContent = '';
+    try {
+      if (clear) await window.eyerest.clearBreakBackground();
+      else {
+        const result = await window.eyerest.pickBreakBackground();
+        if (result.error) throw new Error(result.error);
+        if (result.canceled) return;
+      }
+      $('backgroundStatus').textContent = clear ? '已恢復預設背景。' : '背景已儲存，可按「立刻休息」查看。';
+    } catch (error) {
+      $('backgroundStatus').textContent = '設定失敗：' + error.message;
+    } finally {
+      backgroundBusy = false;
+      pickBackground.disabled = false;
+      await loadSettings();
+    }
+  }
+  pickBackground.addEventListener('click', () => changeBackground(false));
+  clearBackground.addEventListener('click', () => changeBackground(true));
 
   const gameEnabled = $('gamePauseEnabled');
   const gameList = $('gameList');
@@ -132,6 +162,18 @@ function runInit() {
   async function loadSettings() {
     try {
       const s = await window.eyerest.getSettings();
+      const background = s.breakBackgroundImage;
+      $('backgroundName').textContent = background?.name || '使用預設背景';
+      clearBackground.disabled = backgroundBusy || !background;
+      if (background?.url) {
+        if (backgroundPreview.getAttribute('src') !== background.url) {
+          backgroundPreview.hidden = false;
+          backgroundPreview.src = background.url;
+        }
+      } else {
+        backgroundPreview.hidden = true;
+        backgroundPreview.removeAttribute('src');
+      }
       miniTimerOpacity.value = s.miniTimerOpacity ?? 35;
       text(miniTimerOpacityOut, `${miniTimerOpacity.value}%`);
       gameEnabled.checked = !!s.gamePauseEnabled;

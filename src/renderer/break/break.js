@@ -1,6 +1,26 @@
 // break.js — break overlay countdown & breathing cue.
 
 (() => {
+  const background = document.getElementById('breakBackground');
+  const shade = document.getElementById('backgroundShade');
+  function paintBackground(settings) {
+    const url = settings.breakBackgroundImage?.url;
+    if (url && background.getAttribute('src') === url) return;
+    background.hidden = shade.hidden = true;
+    document.body.classList.remove('has-background');
+    if (url) background.src = url;
+    else background.removeAttribute('src');
+  }
+  background.addEventListener('load', () => {
+    background.hidden = shade.hidden = false;
+    document.body.classList.add('has-background');
+  });
+  background.addEventListener('error', () => {
+    background.hidden = shade.hidden = true;
+    document.body.classList.remove('has-background');
+  });
+  window.eyerest.onSettings(paintBackground);
+  window.eyerest.getSettings().then(paintBackground).catch(console.error);
   const params = new URLSearchParams(location.search);
   const mode = params.get('mode') || 'fullscreen';
   const totalSec = Math.max(5, parseInt(params.get('breakDurationSec') || '20', 10));
