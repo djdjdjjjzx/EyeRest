@@ -76,7 +76,16 @@ EyeRest 解決了這兩件事。
 
 ### macOS
 
-目前需要自行從原始碼打包（見下方 [從原始碼建置](#從原始碼建置)）。正式的 `.dmg` release 會在之後推出。
+到 [Releases 頁面](https://github.com/djdjdjjjzx/EyeRest/releases/latest) 選擇符合處理器的 DMG：
+
+- **Apple Silicon（M 系列）**：`EyeRest-0.3.1-mac-arm64.dmg`
+- **Intel**：`EyeRest-0.3.1-mac-x64.dmg`
+
+開啟 DMG，將 EyeRest 拖入「應用程式」。更新前先結束舊版，再取代原有 EyeRest。
+
+Mac 版未使用 Apple Developer ID 簽章或公證；若 macOS 阻擋開啟，請參閱 [Apple 的開啟說明](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac)。遊戲前景偵測暫停功能僅支援 Windows。
+
+Release 附有 `SHA256SUMS-mac.txt` 校驗碼。Mac 版已在 GitHub macOS 執行環境完成單元測試、雙架構打包、版本與架構檢查及 DMG 完整性驗證；尚未進行互動式安裝或圖形介面實測。
 
 ---
 
@@ -127,7 +136,9 @@ npm run dist:win    # Windows → dist/EyeRest Setup X.X.X.exe
 npm run dist:mac    # macOS   → dist/EyeRest-X.X.X.dmg
 ```
 
-打包指令請在對應作業系統執行。Windows 安裝程式尚未簽章，macOS 安裝包尚未提供。
+打包指令請在對應作業系統執行。Windows 安裝程式未簽章，macOS 安裝包未使用 Developer ID 簽章或公證。
+
+維護者可在 GitHub Actions 手動執行 `Package macOS release`，輸入既有版本標籤（例如 `v0.3.1`），產生 Intel／Apple Silicon DMG 並上傳至對應 Release。
 
 ---
 

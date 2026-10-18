@@ -2,6 +2,8 @@
 
 ## 0.3.1 — 2026-10-18
 
+- 補上 Intel 與 Apple Silicon macOS DMG、獨立 Mac SHA256 校驗碼，以及可手動觸發的 GitHub Actions Mac 打包流程。Mac 版未使用 Developer ID 簽章或公證，未實測互動式安裝及圖形介面。
+- Add Intel and Apple Silicon macOS DMGs, separate Mac SHA256 checksums and a manually dispatched GitHub Actions packaging workflow. Mac packages have no Developer ID signing or notarization; interactive installation and GUI behavior were not tested.
 - 停用迷你倒數浮窗的背景節流，修正休息結束後仍顯示過期倒數的問題。
 - 補上實際計時器、IPC 與預載橋接的整合測試，涵蓋一般／深度休息完成、提前結束，以及隱藏後恢復顯示的倒數更新。
 - Disable background throttling for the mini timer to prevent stale countdowns after breaks.
