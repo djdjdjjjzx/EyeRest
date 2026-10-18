@@ -70,6 +70,8 @@ function sync(settings, onContextMenu) {
     webPreferences: {
       preload: path.join(__dirname, '..', 'preload', 'preload.js'),
       contextIsolation: true, nodeIntegration: false,
+      // Keep painting live state when a break overlay or game covers the timer.
+      backgroundThrottling: false,
     },
   });
   const current = win;

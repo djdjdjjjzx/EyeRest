@@ -20,7 +20,17 @@ async function waitFor(predicate, message) {
 }
 
 app.whenReady().then(async () => {
-  const timer = new Timer({ getSettings: () => store.getSettings(), getIdleSeconds: () => 0 });
+  const broadcast = (channel, payload) => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (!win.isDestroyed()) win.webContents.send(channel, payload);
+    }
+  };
+  const timer = new Timer({
+    getSettings: () => store.getSettings(), getIdleSeconds: () => 0,
+    onTick: state => broadcast('eyerest:tick', state),
+    onBreakStart: state => broadcast('eyerest:break-start', state),
+    onBreakEnd: (state, completed) => broadcast('eyerest:break-end', { state, completed }),
+  });
   ipcMain.handle('timer:state', () => timer.getState());
   let menu;
   let popupOptions;
@@ -49,7 +59,38 @@ app.whenReady().then(async () => {
     assert.equal((await read()).time, '20:00');
     assert.equal(win.isAlwaysOnTop(), true);
     assert.equal(win.isFocusable(), true);
+    assert.equal(win.webContents.getBackgroundThrottling(), false,
+      'covered timer keeps rendering live countdown updates');
     assert.deepEqual(win.getSize(), [204, 76]);
+    // Drive the real Timer -> IPC -> preload -> renderer path, without calling paint.
+    const originalSettings = store.getSettings();
+    timer.applySettings({ ...originalSettings, breakDurationSec: 25, longBreakEnabled: false });
+    timer.forceBreak();
+    assert.equal((await read()).label, '休息中');
+    assert.equal((await read()).time, '0:25');
+    win.hide();
+    timer._tick();
+    assert.equal((await read()).time, '0:24', 'hidden timer receives break countdown ticks');
+    for (let i = 0; i < 24; i += 1) timer._tick();
+    assert.deepEqual(await read(), { label: '下次休息', time: '20:00', className: 'pill' },
+      'completed break immediately restores the work countdown while hidden');
+    win.showInactive();
+    timer._tick();
+    assert.equal((await read()).time, '19:59', 'work countdown continues after showing the timer');
+    timer.forceBreak();
+    timer._tick();
+    timer.endBreakEarly();
+    assert.equal((await read()).label, '下次休息', 'skipped break restores the work label');
+    assert.equal((await read()).time, '20:00', 'skipped break resets the countdown immediately');
+    timer.applySettings({ ...originalSettings, longBreakEnabled: true, longBreakDurationSec: 30 });
+    timer.nextBreakIsLong = true;
+    timer.forceBreak();
+    assert.equal((await read()).label, '長休息中');
+    for (let i = 0; i < 30; i += 1) timer._tick();
+    assert.deepEqual(await read(), { label: '下次休息', time: '20:00', className: 'pill' },
+      'completed long break also restores the work countdown immediately');
+    timer.applySettings(originalSettings);
+    timer.restart();
     let stackingRefreshes = 0;
     if (process.platform === 'win32') {
       await waitFor(() => win.isVisible(), 'timer is shown once ready');
@@ -223,7 +264,7 @@ app.whenReady().then(async () => {
     win = BrowserWindow.getAllWindows()[0];
     assert.deepEqual(win.getPosition(), [100, 100]);
     mini.sync({ miniTimerEnabled: false });
-    console.log('Mini timer Electron checks passed: stacking/visibility recovery without focus theft, popup safety, hide, background countdown, tray restore, position, menu dismissal, pause/resume and controls.');
+    console.log('Mini timer Electron checks passed: normal/long/skipped break transitions over IPC, unthrottled background rendering, stacking/visibility recovery without focus theft, popup safety, hide, background countdown, tray restore, position, menu dismissal, pause/resume and controls.');
   } finally {
     Menu.prototype.popup = originalPopup;
     Menu.prototype.closePopup = originalClosePopup;
