@@ -57,7 +57,7 @@ jobs:
             fi
             APP="$APP_DIR/EyeRest.app"
             [[ "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$APP/Contents/Info.plist")" == "$VERSION" ]]
-            lipo -verify_arch "$EXPECTED_ARCH" "$APP/Contents/MacOS/EyeRest"
+            lipo "$APP/Contents/MacOS/EyeRest" -verify_arch "$EXPECTED_ARCH"
             test -s "$APP/Contents/Resources/app.asar"
             DMG="dist/EyeRest-$VERSION.dmg"
             if [[ "$ARCH" == arm64 ]]; then DMG="dist/EyeRest-$VERSION-arm64.dmg"; fi
