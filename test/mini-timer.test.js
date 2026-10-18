@@ -6,9 +6,18 @@ const os = require('os');
 const path = require('path');
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'eyerest-mini-test-'));
 app.setPath('userData', profile);
+// Keep running while checking that a user-hidden timer stays closed.
+app.on('window-all-closed', () => {});
 const store = require('../src/main/store');
 const mini = require('../src/main/mini-timer');
 const { Timer } = require('../src/main/timer');
+
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function waitFor(predicate, message) {
+  const deadline = Date.now() + 4000;
+  while (!predicate() && Date.now() < deadline) await delay(50);
+  assert.ok(predicate(), message);
+}
 
 app.whenReady().then(async () => {
   const timer = new Timer({ getSettings: () => store.getSettings(), getIdleSeconds: () => 0 });
@@ -41,6 +50,28 @@ app.whenReady().then(async () => {
     assert.equal(win.isAlwaysOnTop(), true);
     assert.equal(win.isFocusable(), true);
     assert.deepEqual(win.getSize(), [204, 76]);
+    let stackingRefreshes = 0;
+    if (process.platform === 'win32') {
+      await waitFor(() => win.isVisible(), 'timer is shown once ready');
+      const originalMoveTop = win.moveTop.bind(win);
+      win.moveTop = () => { stackingRefreshes += 1; originalMoveTop(); };
+      // Model a capture overlay displacing the timer, then returning to a game.
+      const foreground = new BrowserWindow({ width: 300, height: 200, show: false });
+      try {
+        foreground.show();
+        foreground.focus();
+        await waitFor(() => foreground.isFocused(), 'another window owns keyboard focus');
+        win.setAlwaysOnTop(false);
+        const before = stackingRefreshes;
+        await waitFor(() => win.isAlwaysOnTop() && stackingRefreshes > before, 'lost topmost state recovers automatically');
+        assert.equal(foreground.isFocused(), true, 'stacking recovery preserves the foreground window focus');
+        win.hide();
+        await waitFor(() => win.isVisible(), 'externally hidden timer recovers automatically');
+        assert.equal(foreground.isFocused(), true, 'showInactive recovery preserves keyboard focus');
+      } finally {
+        foreground.destroy();
+      }
+    }
     await win.webContents.insertCSS('.pill, .handle { transition: none !important; }');
     const appearance = () => win.webContents.executeJavaScript('({ nearby: document.body.classList.contains("nearby"), opacity: getComputedStyle(document.getElementById("pill")).opacity })');
     assert.equal((await appearance()).opacity, '0.35', 'default floating timer is faint');
@@ -86,9 +117,18 @@ app.whenReady().then(async () => {
     }
     openMenu();
     assert.equal((await appearance()).opacity, '1', 'open menu keeps timer visible away from the pointer');
+    if (process.platform === 'win32') {
+      const before = stackingRefreshes;
+      await delay(1200);
+      assert.equal(stackingRefreshes, before, 'stacking recovery does not cover an open popup menu');
+    }
     win.emit('blur');
     assert.equal((await appearance()).opacity, '0.35', 'closing menu restores the idle appearance');
     assert.equal(closeCount, 1, 'losing focus dismisses the menu');
+    if (process.platform === 'win32') {
+      const before = stackingRefreshes;
+      await waitFor(() => stackingRefreshes > before, 'stacking recovery resumes after the popup closes');
+    }
     win.emit('blur');
     assert.equal(closeCount, 1, 'already closed menu is not closed again');
     openMenu();
@@ -154,6 +194,12 @@ app.whenReady().then(async () => {
     menu.items.find(item => item.label === '隱藏').click();
     assert.equal(BrowserWindow.getAllWindows().length, 0);
     assert.equal(store.getSettings().miniTimerEnabled, false, 'hiding updates the setting');
+    if (process.platform === 'win32') {
+      const before = stackingRefreshes;
+      await delay(1200);
+      assert.equal(stackingRefreshes, before, 'destroying the timer stops stacking recovery');
+      assert.equal(BrowserWindow.getAllWindows().length, 0, 'user-hidden timer stays hidden');
+    }
     const elapsed = timer.breakElapsedSec;
     timer._tick();
     assert.equal(timer.breakElapsedSec, elapsed + 1, 'timer keeps running while hidden');
@@ -177,7 +223,7 @@ app.whenReady().then(async () => {
     win = BrowserWindow.getAllWindows()[0];
     assert.deepEqual(win.getPosition(), [100, 100]);
     mini.sync({ miniTimerEnabled: false });
-    console.log('Mini timer Electron checks passed: hide, background countdown, tray restore, position, menu dismissal, pause/resume and controls.');
+    console.log('Mini timer Electron checks passed: stacking/visibility recovery without focus theft, popup safety, hide, background countdown, tray restore, position, menu dismissal, pause/resume and controls.');
   } finally {
     Menu.prototype.popup = originalPopup;
     Menu.prototype.closePopup = originalClosePopup;

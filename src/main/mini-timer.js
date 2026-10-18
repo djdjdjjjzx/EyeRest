@@ -4,6 +4,7 @@ const store = require('./store');
 
 const WIDTH = 204;
 const HEIGHT = 76;
+const STACKING_REFRESH_MS = 1000;
 let win = null;
 let activeMenu = null;
 let idleOpacity = 35;
@@ -72,6 +73,15 @@ function sync(settings, onContextMenu) {
     },
   });
   const current = win;
+  let stackingTimer = null;
+  const refreshStacking = () => {
+    if (current.isDestroyed() || activeMenu) return;
+    // Capture overlays and fullscreen games can reorder even topmost windows.
+    // Reassert the native level and Z-order without taking the game's focus.
+    current.setAlwaysOnTop(true, 'screen-saver');
+    if (!current.isVisible()) current.showInactive();
+    current.moveTop();
+  };
   lastAppearance = '';
   current.webContents.on('did-finish-load', () => {
     lastAppearance = '';
@@ -90,7 +100,14 @@ function sync(settings, onContextMenu) {
   current.on('blur', closeMenu);
   current.on('close', closeMenu);
   current.loadFile(path.join(__dirname, '..', 'renderer', 'mini-timer', 'index.html'));
-  current.once('ready-to-show', () => { if (!current.isDestroyed()) current.showInactive(); });
+  current.once('ready-to-show', () => {
+    if (current.isDestroyed()) return;
+    current.showInactive();
+    if (process.platform === 'win32') {
+      refreshStacking();
+      stackingTimer = setInterval(refreshStacking, STACKING_REFRESH_MS);
+    }
+  });
   current.on('moved', () => {
     ensureVisible();
     if (!current.isDestroyed()) {
@@ -102,6 +119,7 @@ function sync(settings, onContextMenu) {
   screen.on('display-metrics-changed', ensureVisible);
   current.on('closed', () => {
     clearInterval(proximityTimer);
+    clearInterval(stackingTimer);
     screen.removeListener('display-removed', ensureVisible);
     screen.removeListener('display-metrics-changed', ensureVisible);
     win = null;
