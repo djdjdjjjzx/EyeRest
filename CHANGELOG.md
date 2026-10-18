@@ -1,12 +1,19 @@
 # 版本紀錄 / Changelog
 
-## 未發行 / Unreleased
+## 0.3.0 — 2026-10-18
 
+- 自訂休息背景：支援 PNG／JPG（最大 10 MB、3,200 萬像素），保存應用程式專用副本；可預覽、替換或恢復預設，一般／深度休息及三種提醒模式皆適用，讀取失敗時回復預設背景。
+- 修正截圖後倒數浮窗消失，並補上浮窗恢復的回歸測試。
 - 附上內建開始與結束提示音，支援獨立開關、各自音量與試聽。只有完整休息完成播放結束音，且多螢幕只播放一次。
 - 統計時區可跟隨系統或指定 IANA 地區時區（含台北與 UTC），每日紀錄與圖表日期保持一致。
 - 新紀錄儲存完成時間，可在切換時區後重新歸日；舊版總計保留原 UTC 日期，介面會說明此限制。
 - Bundle start/completion chimes with independent toggles, independent volumes and previews. Play completion audio only for completed breaks, once across all monitors.
 - Allow system or explicit IANA statistics time zones, with consistent dates in daily totals and charts. Timestamp new records for regrouping; preserve legacy UTC daily totals with a visible explanation.
+- Add custom PNG/JPG break backgrounds with preview, reset, an application-owned copy, size limits and fallback across all reminder modes.
+- Fix the mini timer disappearing after screenshots and cover recovery with regression checks.
+
+### 發行平台
+- Windows x64 未簽章 NSIS 安裝程式；本次未提供或驗證 macOS DMG。
 
 ## 0.2.1 — 2026-10-17
 
