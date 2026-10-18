@@ -1,0 +1,70 @@
+name: Package macOS release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to package
+        required: true
+        default: v0.3.1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mac-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      RELEASE_REPOSITORY: ${{ github.repository }}
+      GH_TOKEN: ${{ github.token }}
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - name: Check out release source
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          gh release view "$RELEASE_TAG" --repo "$RELEASE_REPOSITORY"
+          git clone --depth 1 --branch "$RELEASE_TAG" "https://github.com/$RELEASE_REPOSITORY.git" source
+          cd source
+          node -e 'if ("v" + require("./package.json").version !== process.env.RELEASE_TAG) process.exit(1)'
+      - name: Install dependencies and test
+        working-directory: source
+        run: |
+          set -euo pipefail
+          node --version
+          npm install --no-audit --no-fund
+          npm test
+      - name: Package Intel and Apple Silicon DMGs
+        working-directory: source
+        run: npx electron-builder --mac dmg --x64 --arm64 --publish never
+      - name: Verify bundles and upload release assets
+        working-directory: source
+        run: |
+          set -euo pipefail
+          VERSION="${RELEASE_TAG#v}"
+          for ARCH in x64 arm64; do
+            APP_DIR="dist/mac"
+            EXPECTED_ARCH=x86_64
+            if [[ "$ARCH" == arm64 ]]; then
+              APP_DIR="dist/mac-arm64"
+              EXPECTED_ARCH=arm64
+            fi
+            APP="$APP_DIR/EyeRest.app"
+            [[ "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$APP/Contents/Info.plist")" == "$VERSION" ]]
+            lipo -verify_arch "$EXPECTED_ARCH" "$APP/Contents/MacOS/EyeRest"
+            test -s "$APP/Contents/Resources/app.asar"
+            DMG="dist/EyeRest-$VERSION.dmg"
+            if [[ "$ARCH" == arm64 ]]; then DMG="dist/EyeRest-$VERSION-arm64.dmg"; fi
+            test -s "$DMG"
+            hdiutil verify "$DMG"
+            mv "$DMG" "dist/EyeRest-$VERSION-mac-$ARCH.dmg"
+          done
+          cd dist
+          shasum -a 256 "EyeRest-$VERSION-mac-x64.dmg" "EyeRest-$VERSION-mac-arm64.dmg" > SHA256SUMS-mac.txt
+          gh release upload "$RELEASE_TAG" "EyeRest-$VERSION-mac-x64.dmg" "EyeRest-$VERSION-mac-arm64.dmg" SHA256SUMS-mac.txt --repo "$RELEASE_REPOSITORY"
