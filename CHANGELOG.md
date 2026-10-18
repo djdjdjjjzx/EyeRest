@@ -1,5 +1,13 @@
 # 版本紀錄 / Changelog
 
+## 未發行 / Unreleased
+
+- 附上內建開始與結束提示音，支援獨立開關、各自音量與試聽。只有完整休息完成播放結束音，且多螢幕只播放一次。
+- 統計時區可跟隨系統或指定 IANA 地區時區（含台北與 UTC），每日紀錄與圖表日期保持一致。
+- 新紀錄儲存完成時間，可在切換時區後重新歸日；舊版總計保留原 UTC 日期，介面會說明此限制。
+- Bundle start/completion chimes with independent toggles, independent volumes and previews. Play completion audio only for completed breaks, once across all monitors.
+- Allow system or explicit IANA statistics time zones, with consistent dates in daily totals and charts. Timestamp new records for regrouping; preserve legacy UTC daily totals with a visible explanation.
+
 ## 0.2.1 — 2026-10-17
 
 ### 新增與改善

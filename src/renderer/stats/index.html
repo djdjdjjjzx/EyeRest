@@ -9,6 +9,8 @@
     <header class="hero">
       <div class="hero-title">休息紀錄</div>
       <div class="hero-sub">過去 14 天的 EyeRest 使用情況</div>
+      <div class="hero-sub" id="timeZoneLabel"></div>
+      <div class="hero-sub">舊版紀錄保留原 UTC 日期；新紀錄依所選時區顯示。</div>
     </header>
 
     <section class="summary">
@@ -51,6 +53,7 @@
       </table>
     </section>
 
+    <script src="../../shared/stats-time.js"></script>
     <script src="./stats.js"></script>
   </body>
 </html>

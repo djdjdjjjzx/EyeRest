@@ -3,8 +3,8 @@
 (() => {
   const $ = (id) => document.getElementById(id);
 
-  function ymd(d) { return d.toISOString().slice(0, 10); }
-  function mmdd(d) { return `${d.getMonth() + 1}/${d.getDate()}`; }
+  const { dateKey, shiftDate } = window.statsTime;
+  function mmdd(key) { return `${Number(key.slice(5, 7))}/${Number(key.slice(8, 10))}`; }
 
   function formatMinutes(sec) {
     const m = Math.round(sec / 60);
@@ -14,26 +14,25 @@
     return `${h} 小時 ${mm} 分`;
   }
 
-  function last14Days() {
+  function last14Days(today) {
     const out = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
     for (let i = 13; i >= 0; i -= 1) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      out.push(d);
+      out.push(shiftDate(today, -i));
     }
     return out;
   }
 
   async function render() {
+    const settings = await window.eyerest.getSettings();
     const stats = await window.eyerest.getStats();
-    const days = last14Days();
-    const todayKey = ymd(new Date());
+    const zone = settings.statsTimeZone || 'system';
+    $('timeZoneLabel').textContent = `統計時區：${zone === 'system' ? `跟隨系統（${Intl.DateTimeFormat().resolvedOptions().timeZone}）` : zone}`;
+    const todayKey = dateKey(new Date(), zone);
+    const days = last14Days(todayKey);
 
     let total = 0;
     let totalRest = 0;
-    const maxCycles = Math.max(1, ...days.map((d) => (stats[ymd(d)]?.cycles || 0)));
+    const maxCycles = Math.max(1, ...days.map((d) => (stats[d]?.cycles || 0)));
 
     // summary
     Object.values(stats).forEach((v) => {
@@ -47,7 +46,7 @@
     // streak — count consecutive days ending today with at least 1 cycle
     let streak = 0;
     for (let i = days.length - 1; i >= 0; i -= 1) {
-      if ((stats[ymd(days[i])]?.cycles || 0) > 0) streak += 1;
+      if ((stats[days[i]]?.cycles || 0) > 0) streak += 1;
       else break;
     }
     $('streak').textContent = String(streak);
@@ -56,7 +55,7 @@
     const chart = $('chart');
     chart.innerHTML = '';
     days.forEach((d) => {
-      const c = stats[ymd(d)]?.cycles || 0;
+      const c = stats[d]?.cycles || 0;
       const bar = document.createElement('div');
       bar.className = 'bar';
       bar.style.height = `${(c / maxCycles) * 100}%`;
@@ -98,5 +97,8 @@
   });
 
   window.eyerest.onBreakEnd(() => render());
+  window.eyerest.onSettings(() => render());
+  // Refresh the selected zone's "today" even when this window stays open overnight.
+  setInterval(() => render(), 60000);
   render();
 })();

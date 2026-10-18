@@ -97,8 +97,20 @@
 
       <label class="toggle">
         <input type="checkbox" id="soundEnabled" />
-        <span>播放提醒音效</span>
+        <span>播放休息開始提示音</span>
       </label>
+      <label class="toggle"><input type="checkbox" id="breakEndSoundEnabled" /><span>播放休息結束提示音</span></label>
+      <div class="hint">完整休息結束時播放；跳過或重新計時不會播放結束音。</div>
+      <label class="row" for="soundVolume">
+        <div class="row-head"><span>開始提示音音量</span><output class="value" id="soundVolumeOut" for="soundVolume">50%</output></div>
+        <input type="range" id="soundVolume" min="0" max="100" step="5" value="50" />
+      </label>
+      <label class="row" for="breakEndSoundVolume">
+        <div class="row-head"><span>結束提示音音量</span><output class="value" id="breakEndSoundVolumeOut" for="breakEndSoundVolume">50%</output></div>
+        <input type="range" id="breakEndSoundVolume" min="0" max="100" step="5" value="50" />
+      </label>
+      <div class="actions-row"><button class="btn" id="previewStartSound">試聽開始音</button><button class="btn" id="previewEndSound">試聽結束音</button></div>
+      <div class="hint" id="soundStatus" role="status">試聽使用目前音量，不受提示音開關影響。</div>
 
       <label class="toggle">
         <input type="checkbox" id="allowSkip" />
@@ -151,6 +163,10 @@
 
     <section class="card" id="system">
       <div class="section-heading"><span class="section-number">05</span><div><h2>系統偏好</h2><p>讓 EyeRest 融入你的工作環境</p></div></div>
+      <label class="row" for="statsTimeZone"><span>統計時區</span>
+        <select id="statsTimeZone" aria-describedby="timeZoneHint"><option value="system">跟隨系統</option></select>
+      </label>
+      <div class="hint" id="timeZoneHint">依選擇的時區計算今日與每日紀錄；不影響休息倒數。舊版紀錄保留原 UTC 日期，新紀錄可隨時區重新歸日。</div>
       <label class="toggle">
         <input type="checkbox" id="miniTimerEnabled" />
         <span>顯示置頂迷你倒數浮窗</span>

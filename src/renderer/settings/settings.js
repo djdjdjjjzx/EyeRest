@@ -54,6 +54,25 @@ function runInit() {
   const idleOut           = $('idleOut');
   const modeSeg           = $('mode');
   const soundEnabled      = $('soundEnabled');
+  const endSound = $('breakEndSoundEnabled');
+  const soundVolume = $('soundVolume');
+  const endSoundVolume = $('breakEndSoundVolume');
+  const timeZone = $('statsTimeZone');
+  const zones = new Set(['UTC', 'Asia/Taipei', ...(Intl.supportedValuesOf ? Intl.supportedValuesOf('timeZone') : [])]);
+  function addZone(zone) {
+    if ([...timeZone.options].some(option => option.value === zone)) return;
+    timeZone.add(new Option(zone === 'Asia/Taipei' ? '台北 (Asia/Taipei)' : zone, zone));
+  }
+  [...zones].sort().forEach(addZone);
+  timeZone.options[0].textContent = `跟隨系統（${Intl.DateTimeFormat().resolvedOptions().timeZone}）`;
+  timeZone.addEventListener('change', () => save({ statsTimeZone: timeZone.value }));
+  endSound.addEventListener('change', () => save({ breakEndSoundEnabled: endSound.checked }));
+  for (const [id, kind] of [['previewStartSound', 'start'], ['previewEndSound', 'end']]) {
+    $(id).addEventListener('click', async () => {
+      try { await window.eyerest.previewSound(kind); $('soundStatus').textContent = (kind === 'start' ? soundVolume : endSoundVolume).value === '0' ? '目前音量為 0%，請提高音量後試聽。' : '已播放試聽音效。'; }
+      catch (error) { $('soundStatus').textContent = '無法播放音效，請再試一次。'; console.error(error); }
+    });
+  }
   const allowSkip         = $('allowSkip');
   const autoLaunch        = $('autoLaunch');
   const miniTimerEnabled  = $('miniTimerEnabled');
@@ -127,6 +146,13 @@ function runInit() {
       text(idleOut,  `${idleMin ? idleMin.value : ''} 分`);
       paintMode(s.reminderMode);
       if (soundEnabled)      soundEnabled.checked      = !!s.soundEnabled;
+      endSound.checked = s.breakEndSoundEnabled !== false;
+      soundVolume.value = s.soundVolume ?? 50;
+      text($('soundVolumeOut'), `${soundVolume.value}%`);
+      endSoundVolume.value = s.breakEndSoundVolume ?? 50;
+      text($('breakEndSoundVolumeOut'), `${endSoundVolume.value}%`);
+      if (s.statsTimeZone && s.statsTimeZone !== 'system') addZone(s.statsTimeZone);
+      timeZone.value = s.statsTimeZone || 'system';
       if (allowSkip)         allowSkip.checked         = !!s.allowSkip;
       if (autoLaunch)        autoLaunch.checked        = !!s.autoLaunch;
       if (miniTimerEnabled) miniTimerEnabled.checked = s.miniTimerEnabled !== false;
@@ -205,6 +231,12 @@ function runInit() {
   bindSlider(workMin, workOut, {
     label: (v) => `${v} 分`,
     save:  (v) => ({ workDurationSec: Number(v) * 60 }),
+  });
+  bindSlider(soundVolume, $('soundVolumeOut'), {
+    label: v => `${v}%`, save: v => ({ soundVolume: Number(v) }),
+  });
+  bindSlider(endSoundVolume, $('breakEndSoundVolumeOut'), {
+    label: v => `${v}%`, save: v => ({ breakEndSoundVolume: Number(v) }),
   });
   bindSlider(miniTimerOpacity, miniTimerOpacityOut, {
     label: (v) => `${v}%`,

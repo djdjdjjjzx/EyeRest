@@ -17,8 +17,8 @@ function showBreak(state, settings) {
     if (Notification.isSupported()) {
       new Notification({
         title: 'EyeRest — 該休息了',
-        body: `看 6 公尺外的物體 ${settings.breakDurationSec} 秒，放鬆你的眼睛。`,
-        silent: !settings.soundEnabled,
+        body: `看 6 公尺外的物體 ${state.breakDurationSec} 秒，放鬆你的眼睛。`,
+        silent: true, // Audio is controlled centrally, including volume and mute.
       }).show();
     }
     // For notification mode, also open a small floating window for the timer.

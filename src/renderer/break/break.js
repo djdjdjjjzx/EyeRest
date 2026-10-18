@@ -5,7 +5,6 @@
   const mode = params.get('mode') || 'fullscreen';
   const totalSec = Math.max(5, parseInt(params.get('breakDurationSec') || '20', 10));
   const allowSkip = params.get('allowSkip') === 'true';
-  const soundEnabled = params.get('soundEnabled') !== 'false';
 
   document.body.classList.remove('mode-fullscreen');
   document.body.classList.add(`mode-${mode}`);
@@ -25,7 +24,6 @@
   const $progress = document.getElementById('progress');
   const $breath = document.getElementById('breath');
   const $skip = document.getElementById('skip');
-  const $chime = document.getElementById('chime');
 
   if (allowSkip && $skip) $skip.hidden = false;
 
@@ -42,9 +40,6 @@
   }
 
   render();
-  if (soundEnabled && $chime) {
-    $chime.play().catch(() => {/* missing asset or blocked autoplay — ignore */});
-  }
 
   const iv = setInterval(() => {
     remaining -= 1;

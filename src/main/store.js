@@ -1,6 +1,7 @@
 // store.js — persistent settings & stats using electron-store.
 
 const Store = require('electron-store');
+const { normalizeTimeZone, aggregateStats } = require('../shared/stats-time');
 
 const DEFAULT_SETTINGS = {
   workDurationSec: 20 * 60,   // 20 minutes
@@ -9,6 +10,10 @@ const DEFAULT_SETTINGS = {
   idleResetDelaySec: 5 * 60, // Additional idle time after pausing before reset
   reminderMode: 'fullscreen', // 'fullscreen' | 'overlay' | 'notification'
   soundEnabled: true,
+  breakEndSoundEnabled: true,
+  soundVolume: 50,
+  breakEndSoundVolume: 50,
+  statsTimeZone: 'system',
   autoLaunch: false,
   miniTimerEnabled: true,
   miniTimerOpacity: 35,      // Idle opacity percentage; proximity always restores full visibility.
@@ -41,6 +46,7 @@ function store() {
     defaults: {
       settings: DEFAULT_SETTINGS,
       stats: {}, // keyed by 'YYYY-MM-DD' -> { cycles, totalRestSec }
+      restEvents: [], // Timestamped records can be regrouped after changing time zones.
     },
   });
   return _store;
@@ -67,6 +73,10 @@ function updateSettings(partial) {
   next.longBreakDurationSec = clamp(next.longBreakDurationSec, 30, 60 * 30);
   next.longBreakEvery = clamp(next.longBreakEvery, 2, 20);
   next.miniTimerOpacity = clamp(next.miniTimerOpacity, 15, 100);
+  next.soundVolume = clamp(next.soundVolume, 0, 100);
+  next.breakEndSoundVolume = clamp(next.breakEndSoundVolume, 0, 100);
+  next.breakEndSoundEnabled = next.breakEndSoundEnabled === true;
+  next.statsTimeZone = normalizeTimeZone(next.statsTimeZone);
   next.gamePauseEnabled = next.gamePauseEnabled === true;
   const { normalizeGamePath } = require('./game-monitor');
   next.gamePaths = [...new Set((Array.isArray(next.gamePaths) ? next.gamePaths : []).map(normalizeGamePath).filter(Boolean))];
@@ -74,22 +84,19 @@ function updateSettings(partial) {
   return next;
 }
 
-function recordCompletedCycle(restSec) {
-  const today = new Date().toISOString().slice(0, 10);
-  const stats = store().get('stats') || {};
-  const day = stats[today] || { cycles: 0, totalRestSec: 0 };
-  day.cycles += 1;
-  day.totalRestSec += restSec || 0;
-  stats[today] = day;
-  store().set('stats', stats);
+function recordCompletedCycle(restSec, completedAt = new Date()) {
+  const events = store().get('restEvents', []);
+  events.push({ completedAt: completedAt.toISOString(), restSec: Math.max(0, Number(restSec) || 0) });
+  store().set('restEvents', events);
 }
 
 function getStats() {
-  return store().get('stats') || {};
+  return aggregateStats(store().get('stats') || {}, store().get('restEvents', []), getSettings().statsTimeZone);
 }
 
 function resetStats() {
   store().set('stats', {});
+  store().set('restEvents', []);
 }
 
 module.exports = {

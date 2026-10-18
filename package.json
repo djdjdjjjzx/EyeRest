@@ -9,7 +9,8 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "test": "node test/timer.test.js",
+    "test": "node test/timer.test.js && node test/stats-time.test.js",
+    "test:sound-stats": "electron test/sound-stats.test.js",
     "test:mini": "electron test/mini-timer.test.js",
     "test:idle": "electron test/idle-ui.test.js",
     "icons": "electron scripts/generate-icons.js",

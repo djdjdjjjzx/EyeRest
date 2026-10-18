@@ -10,6 +10,8 @@ const { Timer } = require('./timer');
 const { applyAutoLaunch } = require('./autostart');
 const windows = require('./windows');
 const miniTimer = require('./mini-timer');
+const { playSound } = require('./sounds');
+const sound = kind => playSound(kind, store.getSettings()).catch(console.error);
 
 // Single-instance lock: prevent multiple EyeRest instances.
 const gotLock = app.requestSingleInstanceLock();
@@ -79,11 +81,15 @@ function startApp() {
     onBreakStart: (state) => {
       windows.closePreWarning();
       windows.showBreak(state, store.getSettings());
+      sound('start');
       broadcast('eyerest:break-start', state);
     },
     onBreakEnd: (state, completed) => {
       windows.closeBreak();
-      if (completed) store.recordCompletedCycle(state.lastBreakDurationSec);
+      if (completed) {
+        store.recordCompletedCycle(state.lastBreakDurationSec);
+        sound('end');
+      }
       broadcast('eyerest:break-end', { state, completed });
     },
     onIdleReset: (state) => {
@@ -143,6 +149,7 @@ function formatTooltip(state) {
 }
 
 function registerIpc() {
+  ipcMain.handle('sound:preview', (_event, kind) => playSound(kind, store.getSettings(), true));
   ipcMain.handle('mini-timer:menu', openMiniTimerMenu);
   ipcMain.handle('games:pick', async (event) => {
     if (process.platform !== 'win32') return [];
