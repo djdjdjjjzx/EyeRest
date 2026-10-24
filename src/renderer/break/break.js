@@ -1,3 +1,4 @@
+const { t } = window.i18n;
 // break.js — break overlay countdown & breathing cue.
 
 (() => {
@@ -32,13 +33,17 @@
   if (isLongBreak) document.body.classList.add('is-long');
   const $label = document.querySelector('.label');
   const $guideEl = document.getElementById('guide');
-  if (isLongBreak) {
-    if ($label) $label.textContent = '好好放鬆一下 · 長休息';
-    document.getElementById('heading').textContent = '起身，換一個風景。';
-    document.getElementById('eyebrow').textContent = 'A LITTLE ROOM TO BREATHE';
-    if ($guideEl) $guideEl.textContent = '伸個懶腰、走一走，讓身體也休息一下。';
+  function paintLanguage() {
+    if (isLongBreak) {
+      if ($label) $label.textContent = t('好好放鬆一下 · 長休息');
+      document.getElementById('heading').textContent = t('起身，換一個風景。');
+      document.getElementById('eyebrow').textContent = t('A LITTLE ROOM TO BREATHE');
+      if ($guideEl) $guideEl.textContent = t('伸個懶腰、走一走，讓身體也休息一下。');
+    }
+    if (mode === 'notification') document.getElementById('count-unit').textContent = t('秒');
   }
-  if (mode === 'notification') document.getElementById('count-unit').textContent = '秒';
+  window.addEventListener('eyerest:language', () => { paintLanguage(); render(); });
+  paintLanguage();
 
   const $count = document.getElementById('count');
   const $progress = document.getElementById('progress');
@@ -56,7 +61,7 @@
     $progress.style.transform = `scaleX(${1 - progress})`;
     // breathing cue alternates every 4s
     const beat = Math.floor((Date.now() - started) / 2000) % 2;
-    $breath.textContent = beat === 0 ? '吸 氣' : '吐 氣';
+    $breath.textContent = beat === 0 ? t("吸 氣") : t("吐 氣");
   }
 
   render();

@@ -1,9 +1,11 @@
 // store.js — persistent settings & stats using electron-store.
 
 const Store = require('electron-store');
+const { normalizeLanguage } = require('../shared/i18n');
 const { normalizeTimeZone, aggregateStats } = require('../shared/stats-time');
 
 const DEFAULT_SETTINGS = {
+  language: 'zh-Hant',
   workDurationSec: 20 * 60,   // 20 minutes
   breakDurationSec: 20,       // 20 seconds (normal break)
   idleThresholdSec: 2 * 60,   // 2 minutes
@@ -60,11 +62,14 @@ function clamp(n, min, max) {
 }
 
 function getSettings() {
-  return { ...DEFAULT_SETTINGS, ...store().get('settings', {}) };
+  const settings = { ...DEFAULT_SETTINGS, ...store().get('settings', {}) };
+  settings.language = normalizeLanguage(settings.language);
+  return settings;
 }
 
 function updateSettings(partial) {
   const next = { ...getSettings(), ...partial };
+  next.language = normalizeLanguage(next.language);
   next.workDurationSec = clamp(next.workDurationSec, 60, 60 * 60 * 4);
   next.breakDurationSec = clamp(next.breakDurationSec, 5, 60 * 30);
   next.idleThresholdSec = clamp(next.idleThresholdSec, 30, 60 * 60);

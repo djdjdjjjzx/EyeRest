@@ -1,3 +1,4 @@
+const { t } = require('./i18n');
 // EyeRest — main process entry
 // Handles app lifecycle, wires together timer / tray / windows / settings.
 
@@ -129,23 +130,23 @@ function formatTooltip(state) {
     if (state.pausedUntilMs) {
       const ms = Math.max(0, state.pausedUntilMs - Date.now());
       const m = Math.ceil(ms / 60000);
-      return `EyeRest — 已暫停（剩 ${m} 分）`;
+      return t("EyeRest — 已暫停（剩 {p0} 分）", { p0: m });
     }
-    return 'EyeRest — 已暫停';
+    return t("EyeRest — 已暫停");
   }
-  if (state.gamePauseName) return `EyeRest — 遊戲中，倒數已暫停（${state.gamePauseName}）`;
+  if (state.gamePauseName) return t("EyeRest — 遊戲中，倒數已暫停（{p0}）", { p0: state.gamePauseName });
   if (state.idlePaused) return state.idleReset
-    ? 'EyeRest — 閒置已重設，等待回來後倒數'
-    : 'EyeRest — 閒置暫停，保留剩餘時間';
+    ? t("EyeRest — 閒置已重設，等待回來後倒數")
+    : t("EyeRest — 閒置暫停，保留剩餘時間");
   if (state.phase === 'break') {
     const remain = Math.max(0, state.breakDurationSec - state.breakElapsedSec);
-    return `EyeRest — 休息中 ${remain}s${state.isLongBreak ? '（長休息）' : ''}`;
+    return t("EyeRest — 休息中 {p0}s{p1}", { p0: remain, p1: state.isLongBreak ? t("（長休息）") : '' });
   }
   const remainSec = Math.max(0, state.workDurationSec - state.workElapsedSec);
   const m = Math.floor(remainSec / 60);
   const s = remainSec % 60;
-  const tag = state.nextBreakIsLong ? '（下次為長休息）' : '';
-  return `EyeRest — 距下次休息 ${m}:${String(s).padStart(2, '0')}${tag}`;
+  const tag = state.nextBreakIsLong ? t("（下次為長休息）") : '';
+  return t("EyeRest — 距下次休息 {p0}:{p1}{p2}", { p0: m, p1: String(s).padStart(2, '0'), p2: tag });
 }
 
 function registerIpc() {
@@ -155,9 +156,9 @@ function registerIpc() {
   ipcMain.handle('games:pick', async (event) => {
     if (process.platform !== 'win32') return [];
     const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender), {
-      title: '選擇遊戲執行檔（請選實際遊戲，不是啟動器）',
+      title: t("選擇遊戲執行檔（請選實際遊戲，不是啟動器）"),
       properties: ['openFile', 'multiSelections'],
-      filters: [{ name: '遊戲執行檔', extensions: ['exe'] }],
+      filters: [{ name: t("遊戲執行檔"), extensions: ['exe'] }],
     });
     if (result.canceled) return [];
     const updated = store.updateSettings({ gamePaths: [...store.getSettings().gamePaths, ...result.filePaths] });
@@ -175,6 +176,9 @@ function registerIpc() {
     if (!updated.preWarningEnabled) windows.closePreWarning();
     gameMonitor.configure(updated);
     miniTimer.sync(updated, openMiniTimerMenu);
+    const state = timer.getState();
+    updateTrayMenu({ paused: state.paused, pausedUntilMs: state.pausedUntilMs });
+    setTrayTooltip(formatTooltip(state));
     broadcast('eyerest:settings', updated);
     return updated;
   });

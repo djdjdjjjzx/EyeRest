@@ -1,3 +1,4 @@
+const { t } = window.i18n;
 // stats.js — renderer for the stats window.
 
 (() => {
@@ -8,10 +9,10 @@
 
   function formatMinutes(sec) {
     const m = Math.round(sec / 60);
-    if (m < 60) return `${m} 分`;
+    if (m < 60) return t("{p0} 分", { p0: m });
     const h = Math.floor(m / 60);
     const mm = m % 60;
-    return `${h} 小時 ${mm} 分`;
+    return t("{p0} 小時 {p1} 分", { p0: h, p1: mm });
   }
 
   function last14Days(today) {
@@ -26,7 +27,7 @@
     const settings = await window.eyerest.getSettings();
     const stats = await window.eyerest.getStats();
     const zone = settings.statsTimeZone || 'system';
-    $('timeZoneLabel').textContent = `統計時區：${zone === 'system' ? `跟隨系統（${Intl.DateTimeFormat().resolvedOptions().timeZone}）` : zone}`;
+    $('timeZoneLabel').textContent = t("統計時區：") + (zone === 'system' ? t("跟隨系統（{p0}）", { p0: Intl.DateTimeFormat().resolvedOptions().timeZone }) : zone);
     const todayKey = dateKey(new Date(), zone);
     const days = last14Days(todayKey);
 
@@ -78,7 +79,10 @@
     const keys = Object.keys(stats).sort().reverse();
     if (keys.length === 0) {
       const tr = document.createElement('tr');
-      tr.innerHTML = '<td colspan="3" style="color: var(--text-soft); padding: 16px 6px;">尚無紀錄 — 完成第一次休息後會開始統計</td>';
+      const cell = document.createElement('td');
+      cell.colSpan = 3;
+      cell.textContent = t("尚無紀錄 — 完成第一次休息後會開始統計");
+      tr.appendChild(cell);
       tbody.appendChild(tr);
     } else {
       keys.forEach((k) => {
@@ -91,11 +95,12 @@
   }
 
   $('resetBtn').addEventListener('click', async () => {
-    if (!confirm('確定要清空所有統計資料嗎？此操作無法復原。')) return;
+    if (!confirm(t("確定要清空所有統計資料嗎？此操作無法復原。"))) return;
     await window.eyerest.resetStats();
     render();
   });
 
+  window.addEventListener('eyerest:language', () => render());
   window.eyerest.onBreakEnd(() => render());
   window.eyerest.onSettings(() => render());
   // Refresh the selected zone's "today" even when this window stays open overnight.

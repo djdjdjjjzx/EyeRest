@@ -1,3 +1,4 @@
+const { t } = require('./i18n');
 // tray.js — system tray icon & menu.
 
 const { Tray, Menu, nativeImage } = require('electron');
@@ -43,36 +44,36 @@ function updateTrayMenu({ paused, pausedUntilMs }) {
     if (pausedUntilMs) {
       const remainMs = Math.max(0, pausedUntilMs - Date.now());
       const remainMin = Math.ceil(remainMs / 60000);
-      pauseLabel = `繼續（剩 ${remainMin} 分）`;
+      pauseLabel = t("繼續（剩 {p0} 分）", { p0: remainMin });
     } else {
-      pauseLabel = '繼續';
+      pauseLabel = t("繼續");
     }
   } else {
-    pauseLabel = '暫停';
+    pauseLabel = t("暫停");
   }
   if (tray == null) return;
   const menu = Menu.buildFromTemplate([
     { label: 'EyeRest', enabled: false },
     { type: 'separator' },
-    { label: '立刻休息', click: () => handlers.onTakeBreakNow?.() },
-    { label: '跳過下一次休息', click: () => handlers.onSkipNext?.() },
+    { label: t("立刻休息"), click: () => handlers.onTakeBreakNow?.() },
+    { label: t("跳過下一次休息"), click: () => handlers.onSkipNext?.() },
     { type: 'separator' },
     { label: pauseLabel, click: () => handlers.onPauseToggle?.() },
     {
-      label: '定時暫停',
+      label: t("定時暫停"),
       enabled: isPaused === false,
       submenu: [
-        { label: '15 分鐘', click: () => handlers.onPauseFor?.(15) },
-        { label: '30 分鐘', click: () => handlers.onPauseFor?.(30) },
-        { label: '1 小時',  click: () => handlers.onPauseFor?.(60) },
+        { label: t("15 分鐘"), click: () => handlers.onPauseFor?.(15) },
+        { label: t("30 分鐘"), click: () => handlers.onPauseFor?.(30) },
+        { label: t("1 小時"),  click: () => handlers.onPauseFor?.(60) },
       ],
     },
     { type: 'separator' },
-    { label: '設定…', click: () => handlers.onOpenSettings?.() },
-    { label: '顯示倒數浮窗', click: () => handlers.onShowMiniTimer?.() },
-    { label: '統計…', click: () => handlers.onOpenStats?.() },
+    { label: t("設定…"), click: () => handlers.onOpenSettings?.() },
+    { label: t("顯示倒數浮窗"), click: () => handlers.onShowMiniTimer?.() },
+    { label: t("統計…"), click: () => handlers.onOpenStats?.() },
     { type: 'separator' },
-    { label: '結束 EyeRest', click: () => handlers.onQuit?.() },
+    { label: t("結束 EyeRest"), click: () => handlers.onQuit?.() },
   ]);
   tray.setContextMenu(menu);
 }

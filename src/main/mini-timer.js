@@ -1,3 +1,4 @@
+const { t } = require('./i18n');
 const { BrowserWindow, Menu, screen } = require('electron');
 const path = require('path');
 const store = require('./store');
@@ -141,23 +142,23 @@ function showMenu(event, timer, windows, onHide) {
     timer.extendWork(minutes);
   };
   const menu = Menu.buildFromTemplate([
-    { label: '再 1 分鐘', enabled: working, click: () => extend(1) },
-    { label: '再 3 分鐘', enabled: working, click: () => extend(3) },
-    { label: '立即下一次休息', enabled: working, click: () => {
+    { label: t("再 1 分鐘"), enabled: working, click: () => extend(1) },
+    { label: t("再 3 分鐘"), enabled: working, click: () => extend(3) },
+    { label: t("立即下一次休息"), enabled: working, click: () => {
       if (timer.getState().phase !== 'work') return;
       if (timer.paused) timer.togglePause();
       timer.forceBreak();
     } },
-    { label: timer.getState().paused ? '開始計時' : '暫停計時', click: () => {
+    { label: timer.getState().paused ? t("開始計時") : t("暫停計時"), click: () => {
       const paused = timer.togglePause();
       if (paused) windows.closePreWarning();
     } },
-    { label: '重新計時', click: () => {
+    { label: t("重新計時"), click: () => {
       windows.closePreWarning();
       timer.restart();
     } },
-    { label: '設定', click: () => windows.openSettings() },
-    { label: '隱藏', click: () => onHide() },
+    { label: t("設定"), click: () => windows.openSettings() },
+    { label: t("隱藏"), click: () => onHide() },
   ]);
   win.focus();
   activeMenu = menu;

@@ -1,3 +1,4 @@
+const { t } = window.i18n;
 // settings.js — renderer for the settings window.
 // The script tag lives at the end of <body>, so the DOM is ready by the time
 // we run. We wrap everything in try/catch so a failure anywhere doesn't leave
@@ -9,19 +10,31 @@
   } catch (err) {
     console.error('[EyeRest settings] init threw:', err);
     const s = document.getElementById('status');
-    if (s) s.textContent = '初始化錯誤: ' + (err && err.message ? err.message : String(err));
+    if (s) s.textContent = t("初始化錯誤: ") + (err && err.message ? err.message : String(err));
   }
 })();
 
 function runInit() {
   const $ = (id) => document.getElementById(id);
+  const language = $('language');
+  language.addEventListener('change', () => save({ language: language.value }));
+  window.addEventListener('eyerest:language', () => {
+    timeZone.options[0].textContent = t('跟隨系統（{p0}）', { p0: Intl.DateTimeFormat().resolvedOptions().timeZone });
+    const taipei = [...timeZone.options].find(option => option.value === 'Asia/Taipei');
+    if (taipei) taipei.textContent = t('台北 (Asia/Taipei)');
+    text($('saveState'), t('變更會自動儲存'));
+    $('soundStatus').textContent = t('試聽使用目前音量，不受提示音開關影響。');
+    $('backgroundStatus').textContent = '';
+    loadSettings();
+    refreshStatus();
+  });
   const pickBackground = $('pickBackground');
   const clearBackground = $('clearBackground');
   const backgroundPreview = $('backgroundPreview');
   let backgroundBusy = false;
   backgroundPreview.addEventListener('error', () => {
     backgroundPreview.hidden = true;
-    $('backgroundStatus').textContent = '背景圖片無法讀取，休息時會使用預設背景。請重新選擇圖片。';
+    $('backgroundStatus').textContent = t("背景圖片無法讀取，休息時會使用預設背景。請重新選擇圖片。");
   });
   async function changeBackground(clear) {
     backgroundBusy = true;
@@ -34,9 +47,9 @@ function runInit() {
         if (result.error) throw new Error(result.error);
         if (result.canceled) return;
       }
-      $('backgroundStatus').textContent = clear ? '已恢復預設背景。' : '背景已儲存，可按「立刻休息」查看。';
+      $('backgroundStatus').textContent = clear ? t("已恢復預設背景。") : t("背景已儲存，可按「立刻休息」查看。");
     } catch (error) {
-      $('backgroundStatus').textContent = '設定失敗：' + error.message;
+      $('backgroundStatus').textContent = t("設定失敗：") + error.message;
     } finally {
       backgroundBusy = false;
       pickBackground.disabled = false;
@@ -54,7 +67,7 @@ function runInit() {
   gameEnabled.addEventListener('change', () => save({ gamePauseEnabled: gameEnabled.checked }));
   addGame.addEventListener('click', async () => {
     try { await window.eyerest.pickGames(); await loadSettings(); }
-    catch (err) { gameError.textContent = '無法加入遊戲：' + err.message; }
+    catch (err) { gameError.textContent = t("無法加入遊戲：") + err.message; }
   });
   function paintGames(paths) {
     gameList.replaceChildren();
@@ -64,7 +77,7 @@ function runInit() {
       label.textContent = game;
       const remove = document.createElement('button');
       remove.className = 'btn';
-      remove.textContent = '移除';
+      remove.textContent = t("移除");
       remove.addEventListener('click', async () => {
         const current = await window.eyerest.getSettings();
         await save({ gamePaths: current.gamePaths.filter(p => p !== game) });
@@ -91,16 +104,16 @@ function runInit() {
   const zones = new Set(['UTC', 'Asia/Taipei', ...(Intl.supportedValuesOf ? Intl.supportedValuesOf('timeZone') : [])]);
   function addZone(zone) {
     if ([...timeZone.options].some(option => option.value === zone)) return;
-    timeZone.add(new Option(zone === 'Asia/Taipei' ? '台北 (Asia/Taipei)' : zone, zone));
+    timeZone.add(new Option(zone === 'Asia/Taipei' ? t("台北 (Asia/Taipei)") : zone, zone));
   }
   [...zones].sort().forEach(addZone);
-  timeZone.options[0].textContent = `跟隨系統（${Intl.DateTimeFormat().resolvedOptions().timeZone}）`;
+  timeZone.options[0].textContent = t("跟隨系統（{p0}）", { p0: Intl.DateTimeFormat().resolvedOptions().timeZone });
   timeZone.addEventListener('change', () => save({ statsTimeZone: timeZone.value }));
   endSound.addEventListener('change', () => save({ breakEndSoundEnabled: endSound.checked }));
   for (const [id, kind] of [['previewStartSound', 'start'], ['previewEndSound', 'end']]) {
     $(id).addEventListener('click', async () => {
-      try { await window.eyerest.previewSound(kind); $('soundStatus').textContent = (kind === 'start' ? soundVolume : endSoundVolume).value === '0' ? '目前音量為 0%，請提高音量後試聽。' : '已播放試聽音效。'; }
-      catch (error) { $('soundStatus').textContent = '無法播放音效，請再試一次。'; console.error(error); }
+      try { await window.eyerest.previewSound(kind); $('soundStatus').textContent = (kind === 'start' ? soundVolume : endSoundVolume).value === '0' ? t("目前音量為 0%，請提高音量後試聽。") : t("已播放試聽音效。"); }
+      catch (error) { $('soundStatus').textContent = t("無法播放音效，請再試一次。"); console.error(error); }
     });
   }
   const allowSkip         = $('allowSkip');
@@ -147,9 +160,9 @@ function runInit() {
 
   function formatSec(sec) {
     const n = Number(sec) || 0;
-    if (n < 60) return `${n} 秒`;
-    if (n % 60 === 0) return `${n / 60} 分`;
-    return `${Math.floor(n / 60)} 分 ${n % 60} 秒`;
+    if (n < 60) return t("{p0} 秒", { p0: n });
+    if (n % 60 === 0) return t("{p0} 分", { p0: n / 60 });
+    return t("{p0} 分 {p1} 秒", { p0: Math.floor(n / 60), p1: n % 60 });
   }
 
   function paintMode(val) {
@@ -162,8 +175,9 @@ function runInit() {
   async function loadSettings() {
     try {
       const s = await window.eyerest.getSettings();
+      language.value = s.language;
       const background = s.breakBackgroundImage;
-      $('backgroundName').textContent = background?.name || '使用預設背景';
+      $('backgroundName').textContent = background?.name || t("使用預設背景");
       clearBackground.disabled = backgroundBusy || !background;
       if (background?.url) {
         if (backgroundPreview.getAttribute('src') !== background.url) {
@@ -182,10 +196,10 @@ function runInit() {
       if (breakSec) breakSec.value = s.breakDurationSec;
       if (idleMin)  idleMin.value  = Math.round(s.idleThresholdSec / 60);
       if (idleResetMin) idleResetMin.value = Math.round(s.idleResetDelaySec / 60);
-      text(idleResetOut, `${idleResetMin ? idleResetMin.value : 5} 分`);
-      text(workOut,  `${workMin ? workMin.value : ''} 分`);
+      text(idleResetOut, t("{p0} 分", { p0: idleResetMin ? idleResetMin.value : 5 }));
+      text(workOut,  t("{p0} 分", { p0: workMin ? workMin.value : '' }));
       text(breakOut, formatSec(breakSec ? breakSec.value : 0));
-      text(idleOut,  `${idleMin ? idleMin.value : ''} 分`);
+      text(idleOut,  t("{p0} 分", { p0: idleMin ? idleMin.value : '' }));
       paintMode(s.reminderMode);
       if (soundEnabled)      soundEnabled.checked      = !!s.soundEnabled;
       endSound.checked = s.breakEndSoundEnabled !== false;
@@ -204,7 +218,7 @@ function runInit() {
       text(preWarnOut, formatSec(preWarnSec ? preWarnSec.value : 60));
       if (longBreakEnabled)   longBreakEnabled.checked   = s.longBreakEnabled !== false;
       if (longEvery)          longEvery.value            = s.longBreakEvery || 3;
-      text(longEveryOut, `${longEvery ? longEvery.value : 3} 次`);
+      text(longEveryOut, t("{p0} 次", { p0: longEvery ? longEvery.value : 3 }));
       if (longDur)            longDur.value              = s.longBreakDurationSec || 180;
       text(longDurOut, formatSec(longDur ? longDur.value : 180));
       if (forceLongAfterSkip) forceLongAfterSkip.checked = s.forceLongBreakAfterSkip !== false;
@@ -216,13 +230,13 @@ function runInit() {
 
   async function save(partial) {
     const saveState = $('saveState');
-    text(saveState, '儲存中…');
+    text(saveState, t("儲存中…"));
     try {
       await window.eyerest.setSettings(partial);
-      text(saveState, '變更已儲存');
+      text(saveState, t("變更已儲存"));
       if (saveState) saveState.dataset.state = 'saved';
     } catch (err) {
-      text(saveState, '儲存失敗，請重新調整以重試');
+      text(saveState, t("儲存失敗，請重新調整以重試"));
       if (saveState) saveState.dataset.state = 'error';
       console.error('[EyeRest settings] save failed:', err);
     }
@@ -232,33 +246,33 @@ function runInit() {
     if (!statusEl) return;
     try {
       const state = await window.eyerest.getTimerState();
-      if (!state) { statusEl.textContent = '尚未連線'; return; }
-      gameError.textContent = state.gameDetectionError ? '遊戲偵測無法啟動，倒數照常進行。請重新勾選以重試。' : '';
+      if (!state) { statusEl.textContent = t("尚未連線"); return; }
+      gameError.textContent = state.gameDetectionError ? t("遊戲偵測無法啟動，倒數照常進行。請重新勾選以重試。") : '';
       if (state.paused) {
-        statusEl.textContent = '已暫停';
-        text(pauseToggleBtn, '繼續');
+        statusEl.textContent = t("已暫停");
+        text(pauseToggleBtn, t("繼續"));
       } else if (state.gamePauseName) {
-        statusEl.textContent = `遊戲中，倒數已暫停 · ${state.gamePauseName}`;
-        text(pauseToggleBtn, '暫停');
+        statusEl.textContent = t("遊戲中，倒數已暫停 · {p0}", { p0: state.gamePauseName });
+        text(pauseToggleBtn, t("暫停"));
       } else if (state.idlePaused) {
         const r = Math.max(0, state.workDurationSec - state.workElapsedSec);
-        statusEl.textContent = state.idleReset ? '閒置已重設，等待回來後倒數'
-          : `閒置暫停 · 保留 ${formatSec(r)}`;
-        text(pauseToggleBtn, '暫停');
+        statusEl.textContent = state.idleReset ? t("閒置已重設，等待回來後倒數")
+          : t("閒置暫停 · 保留 {p0}", { p0: formatSec(r) });
+        text(pauseToggleBtn, t("暫停"));
       } else if (state.phase === 'break') {
         const r = Math.max(0, state.breakDurationSec - state.breakElapsedSec);
-        statusEl.textContent = `休息中 · 還剩 ${r} 秒`;
-        text(pauseToggleBtn, '暫停');
+        statusEl.textContent = t("休息中 · 還剩 {p0} 秒", { p0: r });
+        text(pauseToggleBtn, t("暫停"));
       } else {
         const r = Math.max(0, state.workDurationSec - state.workElapsedSec);
         const m = Math.floor(r / 60);
         const sec = r % 60;
-        statusEl.textContent = `距下次休息 ${m}:${String(sec).padStart(2, '0')}`;
-        text(pauseToggleBtn, '暫停');
+        statusEl.textContent = t("距下次休息 {p0}:{p1}", { p0: m, p1: String(sec).padStart(2, '0') });
+        text(pauseToggleBtn, t("暫停"));
       }
     } catch (err) {
       console.error('[EyeRest settings] refreshStatus failed:', err);
-      statusEl.textContent = '讀取狀態失敗';
+      statusEl.textContent = t("讀取狀態失敗");
     }
   }
 
@@ -271,7 +285,7 @@ function runInit() {
   }
 
   bindSlider(workMin, workOut, {
-    label: (v) => `${v} 分`,
+    label: (v) => t("{p0} 分", { p0: v }),
     save:  (v) => ({ workDurationSec: Number(v) * 60 }),
   });
   bindSlider(soundVolume, $('soundVolumeOut'), {
@@ -289,11 +303,11 @@ function runInit() {
     save:  (v) => ({ breakDurationSec: Number(v) }),
   });
   bindSlider(idleMin, idleOut, {
-    label: (v) => `${v} 分`,
+    label: (v) => t("{p0} 分", { p0: v }),
     save:  (v) => ({ idleThresholdSec: Number(v) * 60 }),
   });
   bindSlider(idleResetMin, idleResetOut, {
-    label: (v) => `${v} 分`,
+    label: (v) => t("{p0} 分", { p0: v }),
     save: (v) => ({ idleResetDelaySec: Number(v) * 60 }),
   });
   bindSlider(preWarnSec, preWarnOut, {
@@ -301,7 +315,7 @@ function runInit() {
     save:  (v) => ({ preWarningSec: Number(v) }),
   });
   bindSlider(longEvery, longEveryOut, {
-    label: (v) => `${v} 次`,
+    label: (v) => t("{p0} 次", { p0: v }),
     save:  (v) => ({ longBreakEvery: Number(v) }),
   });
   bindSlider(longDur, longDurOut, {

@@ -1,3 +1,4 @@
+const { t } = require('./i18n');
 // windows.js — manage break / settings / stats windows.
 
 const { BrowserWindow, screen, Notification } = require('electron');
@@ -16,8 +17,8 @@ function showBreak(state, settings) {
   if (mode === 'notification') {
     if (Notification.isSupported()) {
       new Notification({
-        title: 'EyeRest — 該休息了',
-        body: `看 6 公尺外的物體 ${state.breakDurationSec} 秒，放鬆你的眼睛。`,
+        title: t("EyeRest — 該休息了"),
+        body: t("看 6 公尺外的物體 {p0} 秒，放鬆你的眼睛。", { p0: state.breakDurationSec }),
         silent: true, // Audio is controlled centrally, including volume and mute.
       }).show();
     }
@@ -104,7 +105,7 @@ function openSettings() {
     width: 1100, height: 800,
     minWidth: 560, minHeight: 480,
     icon: path.join(__dirname, '../../assets/icons/icon.png'),
-    title: 'EyeRest — 設定',
+    title: t("EyeRest — 設定"),
     backgroundColor: '#f7faf9',
     autoHideMenuBar: true,
     webPreferences: {
@@ -125,7 +126,7 @@ function openStats() {
   }
   statsWindow = new BrowserWindow({
     width: 720, height: 520,
-    title: 'EyeRest — 統計',
+    title: t("EyeRest — 統計"),
     backgroundColor: '#f7faf9',
     autoHideMenuBar: true,
     webPreferences: {

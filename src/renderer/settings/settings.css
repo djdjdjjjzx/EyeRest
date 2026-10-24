@@ -71,3 +71,10 @@ button:disabled,input:disabled { opacity:.45; cursor:not-allowed; }
 @media(max-width:950px) { .sidebar { width:188px; padding:28px 16px; } main { margin-left:188px; padding:28px 24px; } .settings-grid { grid-template-columns:1fr; } #timing { grid-row:auto; } .hero { flex-direction:column; gap:10px; } .status-panel { align-items:flex-start; flex-direction:column; } }
 @media(max-width:620px) { .sidebar { position:static; width:auto; padding:18px 20px; } .brand img { width:36px; height:36px; } .brand small,.nav-label,.sidebar-note { display:none; } nav { display:flex; flex-wrap:wrap; gap:2px; margin-top:12px; } nav a { padding:7px 9px; font-size:12px; } nav a span { display:none; } main { margin:0; padding:24px 18px; } h1 { font-size:26px; } .card { padding:22px; } .status { font-size:19px; } }
 @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } *,*::after { transition:none!important; } }
+/* Keep longer translations readable at every supported window size. */
+nav a { display:flex; align-items:baseline; }
+nav a span { flex-shrink:0; }
+.actions-row { flex-wrap:wrap; }
+.status-panel > div:first-child { min-width:0; }
+.status { overflow-wrap:anywhere; }
+@media(min-width:951px) { .status-panel { flex-wrap:wrap; } }

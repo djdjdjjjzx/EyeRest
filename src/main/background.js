@@ -1,3 +1,4 @@
+const { t } = require('./i18n');
 // Import a private copy so moving the original picture does not break the setting.
 const { app, BrowserWindow, dialog, ipcMain, nativeImage } = require('electron');
 const fs = require('fs/promises');
@@ -11,15 +12,15 @@ const EXTENSIONS = ['png', 'jpg', 'jpeg'];
 
 async function importBackground(file) {
   const extension = path.extname(file).slice(1).toLowerCase();
-  if (!EXTENSIONS.includes(extension)) throw new Error('請選擇 PNG 或 JPG 圖片。');
+  if (!EXTENSIONS.includes(extension)) throw new Error(t("請選擇 PNG 或 JPG 圖片。"));
   const info = await fs.stat(file);
-  if (!info.isFile() || info.size > MAX_BYTES) throw new Error('圖片大小不可超過 10 MB。');
+  if (!info.isFile() || info.size > MAX_BYTES) throw new Error(t("圖片大小不可超過 10 MB。"));
   const bytes = await fs.readFile(file);
-  if (bytes.length > MAX_BYTES) throw new Error('圖片大小不可超過 10 MB。');
+  if (bytes.length > MAX_BYTES) throw new Error(t("圖片大小不可超過 10 MB。"));
   const image = nativeImage.createFromBuffer(bytes);
-  if (image.isEmpty()) throw new Error('無法讀取這張圖片，請選擇其他圖片。');
+  if (image.isEmpty()) throw new Error(t("無法讀取這張圖片，請選擇其他圖片。"));
   const { width, height } = image.getSize();
-  if (width * height > 32000000) throw new Error('圖片解析度過高，請縮小至 3,200 萬像素以內。');
+  if (width * height > 32000000) throw new Error(t("圖片解析度過高，請縮小至 3,200 萬像素以內。"));
   const directory = path.join(app.getPath('userData'), 'backgrounds');
   await fs.mkdir(directory, { recursive: true });
   const destination = path.join(directory, `${randomUUID()}.${extension}`);
@@ -54,8 +55,8 @@ async function removeBackground(background) {
 function registerBackgroundIpc(broadcast) {
   ipcMain.handle('background:pick', async (event) => {
     const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender), {
-      title: '選擇休息背景圖片', properties: ['openFile'],
-      filters: [{ name: '背景圖片', extensions: EXTENSIONS }],
+      title: t("選擇休息背景圖片"), properties: ['openFile'],
+      filters: [{ name: t("背景圖片"), extensions: EXTENSIONS }],
     });
     if (result.canceled || !result.filePaths.length) return { canceled: true };
     try {
