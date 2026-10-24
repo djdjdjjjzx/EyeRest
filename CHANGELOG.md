@@ -1,5 +1,14 @@
 # 版本紀錄 / Changelog
 
+## 0.4.0 — 2026-10-24
+
+- 新增繁體中文、英文、日文、簡體中文四種介面語言，涵蓋設定、休息畫面、預告、浮窗、統計及原生選單。
+- 語言切換即時套用並自動儲存，重新啟動後沿用選擇；舊設定與不支援的語言值預設使用繁體中文。
+- 新增翻譯目錄完整性、參數替換、回退、語言保存與原生選單切換的檢查。
+- Add Traditional Chinese, English, Japanese and Simplified Chinese across settings, breaks, prewarnings, mini timer, statistics and native menus.
+- Apply and persist language preferences immediately; retain the selection after restart and fall back to Traditional Chinese for existing profiles or unsupported values.
+- Check translation coverage, interpolation, fallback, preference persistence and native menu language changes.
+
 ## 0.3.1 — 2026-10-18
 
 - 補上 Intel 與 Apple Silicon macOS DMG、獨立 Mac SHA256 校驗碼，以及可手動觸發的 GitHub Actions Mac 打包流程。Mac 版未使用 Developer ID 簽章或公證，未實測互動式安裝及圖形介面。

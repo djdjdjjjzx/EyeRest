@@ -32,6 +32,7 @@ app.whenReady().then(async () => {
     onBreakEnd: (state, completed) => broadcast('eyerest:break-end', { state, completed }),
   });
   ipcMain.handle('timer:state', () => timer.getState());
+  ipcMain.handle('settings:get', () => store.getSettings());
   let menu;
   let popupOptions;
   let closeCount = 0;
@@ -56,6 +57,7 @@ app.whenReady().then(async () => {
     const read = () => win.webContents.executeJavaScript('({ label: document.getElementById("label").textContent, time: document.getElementById("remaining").textContent, className: document.getElementById("pill").className })');
     // Await the preload's initial asynchronous state request.
     await win.webContents.executeJavaScript('window.eyerest.getTimerState().then(paint)');
+    await waitFor(() => win.isVisible(), 'timer is shown before checking native window state');
     assert.equal((await read()).time, '20:00');
     assert.equal(win.isAlwaysOnTop(), true);
     assert.equal(win.isFocusable(), true);

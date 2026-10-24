@@ -10,6 +10,7 @@ const store = require('../src/main/store');
 const { playSound } = require('../src/main/sounds');
 
 app.whenReady().then(async () => {
+  ipcMain.handle('settings:get', () => store.getSettings());
   assert.equal(store.getSettings().statsTimeZone, 'system');
   assert.equal(store.getSettings().breakEndSoundEnabled, true);
   assert.throws(() => store.updateSettings({ statsTimeZone: 'invalid' }));
@@ -51,7 +52,6 @@ app.whenReady().then(async () => {
   assert.equal(await audio.webContents.executeJavaScript('document.getElementById("end").paused'), true, 'zero-volume preview does not play');
   assert.ok(await audio.webContents.executeJavaScript('document.getElementById("start").currentTime') >= beforeMute);
   store.updateSettings({ breakEndSoundVolume: 50 });
-  ipcMain.handle('settings:get', () => store.getSettings());
   ipcMain.handle('settings:set', (_e, partial) => store.updateSettings(partial));
   ipcMain.handle('timer:state', () => ({ phase: 'work', workDurationSec: 1200, workElapsedSec: 0 }));
   ipcMain.handle('stats:get', () => store.getStats());

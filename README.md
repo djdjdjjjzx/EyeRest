@@ -15,10 +15,11 @@
 
 ---
 
-## v0.3.1 更新重點
+## v0.4.0 更新重點
 
-- 修正一般休息、深度休息或提前結束後，浮窗仍停留在舊休息畫面的問題。
-- 浮窗被其他視窗遮住時仍持續更新倒數，恢復顯示後接續最新狀態。
+- 新增繁體中文、English、日本語、简体中文四種介面語言。
+- 在「設定 → 系統偏好 → 語言」切換，立即套用並保存，重新啟動後沿用選擇。
+- 設定、休息畫面、浮窗、統計與原生系統匣選單使用同一語言偏好；舊設定預設沿用繁體中文。
 
 完整版本紀錄請見 [CHANGELOG](CHANGELOG.md)。
 
@@ -71,7 +72,7 @@ EyeRest 解決了這兩件事。
 
 ### Windows
 
-1. 到 [Releases 頁面](https://github.com/djdjdjjjzx/EyeRest/releases/latest) 下載 `EyeRest.Setup.0.3.1.exe`（Windows x64）
+1. 到 [Releases 頁面](https://github.com/djdjdjjjzx/EyeRest/releases/latest) 下載 `EyeRest.Setup.0.4.0.exe`（Windows x64）
 2. 雙擊安裝
 3. 第一次執行時 Windows SmartScreen 會跳警告（因為 app 沒買付費簽章）→ 點「**更多資訊**」→「**仍要執行**」
 4. 安裝完啟動後，右下角系統匣會出現 EyeRest 眼睛小圖示，右鍵就能進入設定
@@ -80,8 +81,8 @@ EyeRest 解決了這兩件事。
 
 到 [Releases 頁面](https://github.com/djdjdjjjzx/EyeRest/releases/latest) 選擇符合處理器的 DMG：
 
-- **Apple Silicon（M 系列）**：`EyeRest-0.3.1-mac-arm64.dmg`
-- **Intel**：`EyeRest-0.3.1-mac-x64.dmg`
+- **Apple Silicon（M 系列）**：`EyeRest-0.4.0-mac-arm64.dmg`
+- **Intel**：`EyeRest-0.4.0-mac-x64.dmg`
 
 開啟 DMG，將 EyeRest 拖入「應用程式」。更新前先結束舊版，再取代原有 EyeRest。
 
@@ -129,6 +130,9 @@ npm run test:sound-stats
 
 # 自訂休息背景 Electron 整合測試
 npm run test:background
+
+# 四種語言即時切換與保存 Electron 整合測試
+npm run test:i18n
 
 # 修改 SVG 後重新產生各平台圖示
 npm run icons
